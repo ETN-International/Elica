@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ETN Genoma · Cosa prendiamo da Galaxy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--paper:#f5f0e8;--paper-2:#ede8df;--ink:#1a1714;--ink-light:#3a342e;--ink-muted:#7c6f65;--accent:#c8420a;--accent-2:#1a6b52;--accent-3:#2d4a8a;--rule:#d4c9b8;}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'DM Sans',sans-serif;font-weight:300;background:var(--paper);color:var(--ink-light);line-height:1.6;-webkit-font-smoothing:antialiased;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");}
+em{font-style:italic}
+.sidebar{position:fixed;top:0;left:0;width:316px;height:100vh;background:var(--ink);color:var(--paper);display:flex;flex-direction:column;padding:32px 26px 22px;z-index:100}
+.brand{font-family:'DM Serif Display',serif;font-size:24px;line-height:1.1;color:var(--paper);letter-spacing:-.01em}
+.brand em{color:var(--accent)}
+.brand-sub{font-family:'DM Mono',monospace;font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-muted);margin-top:10px}
+.nav{margin-top:26px;flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:1px}
+.nav::-webkit-scrollbar{width:3px}.nav::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:2px}
+.nav-group{font-family:'DM Mono',monospace;font-size:8.5px;letter-spacing:.2em;text-transform:uppercase;color:#6b5f54;padding:14px 13px 6px;margin-top:6px}
+.nav-group:first-child{margin-top:0}
+.nav a{display:flex;align-items:baseline;gap:11px;padding:7px 13px;border-radius:6px;text-decoration:none;color:#c9bfb4;transition:background .18s,color .18s;cursor:pointer}
+.nav a .n{font-family:'DM Mono',monospace;font-size:10px;color:var(--accent);min-width:16px}
+.nav a .l{font-size:12.5px;font-weight:400;line-height:1.3}
+.nav a:hover{color:var(--paper);background:rgba(255,255,255,.04)}
+.nav a.active{background:rgba(200,66,10,.14);color:#fff;box-shadow:inset 3px 0 0 var(--accent)}
+.nav a.active .l{font-weight:500}
+.side-foot{font-family:'DM Mono',monospace;font-size:8.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-muted);line-height:1.9;border-top:1px solid rgba(255,255,255,.09);padding-top:14px;margin-top:10px}
+.content{margin-left:316px;min-height:100vh}
+.page{display:none;padding:64px 76px 86px;max-width:952px;animation:fadeUp .5s ease}
+.page.active{display:block}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.page{animation:none}}
+.eyebrow{font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:var(--accent);position:relative;padding-top:16px}
+.eyebrow::before{content:"";position:absolute;top:0;left:0;width:38px;height:2px;background:var(--accent)}
+h1.ptitle{font-family:'DM Serif Display',serif;font-size:46px;line-height:1.06;color:var(--ink);letter-spacing:-.015em;margin:18px 0 0}
+h1.ptitle em{color:var(--accent)}
+.dek{font-family:'DM Serif Display',serif;font-style:italic;font-size:20px;color:var(--ink-muted);margin-top:15px;line-height:1.4}
+.intro{font-family:'DM Serif Display',serif;font-style:italic;font-size:19px;line-height:1.5;color:var(--ink-light);margin:26px 0 8px}
+p{margin:13px 0;font-size:15.5px}
+strong{font-weight:500;color:var(--ink)}
+.sub{font-family:'DM Serif Display',serif;color:var(--ink);margin:36px 0 6px;font-size:25px;letter-spacing:-.01em}
+.sub em{color:var(--accent)}
+.sub-sm{font-family:'DM Serif Display',serif;color:var(--ink);margin:26px 0 4px;font-size:20px}
+.cover{padding:0}
+.cover .cover-inner{min-height:100vh;display:flex;flex-direction:column;justify-content:center;padding:64px 76px}
+.cover-title{font-family:'DM Serif Display',serif;font-size:70px;line-height:1;color:var(--ink);letter-spacing:-.02em;margin:20px 0 0}
+.cover-title em{color:var(--accent)}
+.cover-body{font-family:'DM Serif Display',serif;font-style:italic;font-size:21px;line-height:1.45;color:var(--ink-light);max-width:660px;margin-top:22px}
+.cover-body strong{color:var(--accent);font-weight:400;font-style:italic}
+.cover-stats{display:flex;gap:0;margin-top:46px;border-top:1px solid var(--rule);padding-top:22px;max-width:700px}
+.cstat{flex:1;padding-right:18px}
+.cstat + .cstat{border-left:1px solid var(--rule);padding-left:18px}
+.cs-num{font-family:'DM Serif Display',serif;font-size:34px;color:var(--accent);line-height:1}
+.cs-lab{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.11em;text-transform:uppercase;color:var(--ink-muted);margin-top:7px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:0;margin:26px 0;border-top:1px solid var(--rule)}
+.cell{padding:20px 24px 20px 0;border-bottom:1px solid var(--rule)}
+.cell:nth-child(odd){border-right:1px solid var(--rule);padding-right:28px}
+.cell:nth-child(even){padding-left:28px}
+.cnum{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent)}
+.ctitle{font-family:'DM Serif Display',serif;font-size:19px;color:var(--ink);margin:7px 0 5px}
+.cell p{font-size:14px;margin:5px 0 0}
+.note{background:var(--paper-2);border-left:3px solid var(--accent-2);padding:16px 20px;margin:22px 0;border-radius:0 6px 6px 0;font-size:14.5px}
+.note .nlabel{font-family:'DM Mono',monospace;font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent-2);display:block;margin-bottom:6px}
+.note.amber{border-left-color:var(--accent)}.note.amber .nlabel{color:var(--accent)}
+.field{display:flex;gap:14px;padding:11px 0;border-bottom:1px solid var(--rule);font-size:14.5px}
+.field:last-child{border-bottom:none}
+.flabel{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--accent);min-width:128px;padding-top:2px;flex-shrink:0}
+/* PHASE marker */
+.phase{margin:34px 0 4px;padding:9px 0 8px;border-top:2px solid var(--ink);display:flex;align-items:baseline;gap:12px}
+.phase .ph-tag{font-family:'DM Mono',monospace;font-size:9.5px;letter-spacing:.15em;text-transform:uppercase;color:var(--accent);border:1px solid var(--accent);border-radius:12px;padding:2px 9px}
+.phase .ph-name{font-family:'DM Serif Display',serif;font-size:21px;color:var(--ink)}
+.phase .ph-time{font-family:'DM Mono',monospace;font-size:10px;color:var(--ink-muted);margin-left:auto;letter-spacing:.06em}
+/* HOST say */
+.say{background:var(--ink);color:var(--paper);padding:16px 20px;border-radius:8px;margin:14px 0;font-size:15px;line-height:1.55}
+.say .slabel{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:#e8935f;display:block;margin-bottom:7px}
+.say em{color:#e8b79f;font-style:italic}
+/* HOST do */
+.hostdo{background:rgba(45,74,138,.07);border:1px solid var(--rule);border-radius:8px;padding:14px 18px;margin:14px 0;font-size:14.5px}
+.hostdo .hlabel{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:var(--accent-3);display:block;margin-bottom:7px}
+.hostdo ul{margin:6px 0 0 2px;padding:0;list-style:none}
+.hostdo li{padding-left:16px;position:relative;margin:5px 0}
+.hostdo li::before{content:"›";position:absolute;left:0;color:var(--accent-3);font-weight:600}
+/* PROMPT */
+.prompt{background:#232019;color:#e9e2d4;padding:14px 17px;border-radius:7px;margin:11px 0;font-family:'DM Mono',monospace;font-size:12.5px;line-height:1.6;border-left:3px solid var(--accent)}
+.prompt .plabel{font-size:8.5px;letter-spacing:.15em;text-transform:uppercase;color:var(--accent);display:block;margin-bottom:7px;font-weight:500}
+/* STEP (student, 5 parts) */
+.step{border:1px solid var(--rule);border-radius:9px;padding:18px 20px;margin:16px 0;background:rgba(255,255,255,.28)}
+.step-head{display:flex;align-items:baseline;gap:11px;margin-bottom:4px}
+.step-n{font-family:'DM Serif Display',serif;font-size:22px;color:var(--accent);line-height:1}
+.step-act{font-family:'DM Serif Display',serif;font-size:18px;color:var(--ink)}
+.step p{font-size:14.5px;margin:9px 0}
+.step .s-lab{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-muted);display:block;margin:12px 0 2px}
+.step .s-ex{background:var(--paper-2);border-radius:6px;padding:11px 14px;font-size:13.5px;margin:6px 0}
+.step .s-ex em{font-style:italic;color:var(--ink-light)}
+.step .s-stuck{border-left:3px solid var(--accent-2);padding:4px 0 4px 14px;margin:8px 0;font-size:14px}
+.step .s-tool{border-left:3px solid var(--accent);padding:4px 0 4px 14px;margin:8px 0;font-size:14px}
+/* TOOL box (micro-strumenti) */
+.tool{background:var(--paper-2);border-radius:9px;padding:16px 20px;margin:16px 0}
+.tool .tlabel{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:var(--accent);display:block;margin-bottom:8px}
+.tool .tname{font-family:'DM Serif Display',serif;font-size:17px;color:var(--ink);margin-bottom:4px}
+.tool p{font-size:14px;margin:7px 0}
+.tool ol,.tool ul{margin:8px 0 4px 20px;font-size:14px}
+.tool li{margin:4px 0}
+.mono-list{font-family:'DM Mono',monospace;font-size:12.5px;line-height:1.7;color:var(--ink-light);background:rgba(255,255,255,.4);border-radius:6px;padding:12px 15px;margin:8px 0}
+.matrix-wrap{margin:24px 0;overflow-x:auto}
+table.matrix{width:100%;border-collapse:collapse;font-size:13.5px}
+table.matrix th,table.matrix td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--rule);vertical-align:top}
+table.matrix thead th{border-bottom:2px solid var(--ink)}
+.pill-label{font-family:'DM Mono',monospace;font-size:9.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--accent);font-weight:500}
+table.matrix td:first-child{font-family:'DM Serif Display',serif;font-size:14.5px;color:var(--ink)}
+.role{padding:16px 0;border-bottom:1px solid var(--rule)}.role:last-child{border-bottom:none}
+.role-name{font-family:'DM Serif Display',serif;font-size:19px;color:var(--ink)}
+.role-tag{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.13em;text-transform:uppercase;color:var(--accent);margin-left:9px}
+.role p{font-size:14px;margin:7px 0 0}
+.card-el{padding:14px 0;border-bottom:1px solid var(--rule)}.card-el:last-child{border-bottom:none}
+.card-kind{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;padding:3px 9px;border-radius:14px;display:inline-block}
+.k-impr{background:rgba(200,66,10,.13);color:var(--accent)}.k-opp{background:rgba(26,107,82,.13);color:var(--accent-2)}
+.k-az{background:rgba(45,74,138,.13);color:var(--accent-3)}.k-jolly{background:rgba(124,111,101,.15);color:var(--ink-muted)}
+.card-el .ctxt{font-family:'DM Serif Display',serif;font-style:italic;font-size:15.5px;color:var(--ink);margin:8px 0 5px}
+.card-el p{font-size:13px;margin:4px 0 0}
+.card{background:var(--ink);color:var(--paper);padding:32px 36px;border-radius:12px;margin:30px 0 8px}
+.card .ceyebrow{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--accent);margin-bottom:12px}
+.card .ctitle-lg{font-family:'DM Serif Display',serif;font-size:26px;line-height:1.22;color:var(--paper);letter-spacing:-.01em}
+.card .ctitle-lg em{color:#e8935f}
+.card p{color:#c9bfb4;font-size:14.5px;margin-top:12px}
+.audience{display:inline-flex;gap:6px;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;margin-top:8px}
+.audience span{padding:3px 9px;border-radius:12px;background:rgba(200,66,10,.1);color:var(--accent)}
+.pnav{display:flex;justify-content:space-between;margin-top:52px;padding-top:22px;border-top:1px solid var(--rule);gap:20px}
+.pnav a{text-decoration:none;max-width:46%;cursor:pointer}
+.pnav .pn-dir{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent)}
+.pnav .pn-lab{font-family:'DM Serif Display',serif;font-size:17px;color:var(--ink);margin-top:5px;line-height:1.2}
+.pnav .next{text-align:right;margin-left:auto}
+.hamb{display:none}
+@media(max-width:900px){
+  .sidebar{transform:translateX(-100%);transition:transform .3s;width:284px}.sidebar.open{transform:none}
+  .content{margin-left:0}.page{padding:60px 22px 66px}.cover .cover-inner{padding:60px 22px}
+  .cover-title{font-size:42px}h1.ptitle{font-size:31px}
+  .grid{grid-template-columns:1fr}.cell:nth-child(odd){border-right:none;padding-right:0}.cell:nth-child(even){padding-left:0}
+  .field{flex-direction:column;gap:4px}.phase .ph-time{display:none}
+  .hamb{display:flex;position:fixed;top:14px;left:14px;z-index:200;width:46px;height:46px;background:var(--ink);border:none;border-radius:9px;color:var(--paper);align-items:center;justify-content:center;cursor:pointer}
+  .hamb span{font-size:20px}.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:90}.overlay.show{display:block}
+}
+
+.split{display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid var(--rule);border-radius:10px;overflow:hidden;margin:18px 0}
+.split .col{padding:18px 20px}
+.split .col:first-child{border-right:1px solid var(--rule);background:rgba(26,107,82,.05)}
+.split .col.no{background:rgba(200,66,10,.05)}
+.split .chd{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.13em;text-transform:uppercase;margin-bottom:8px}
+.split .col:first-child .chd{color:var(--accent-2)}
+.split .col.no .chd{color:var(--accent)}
+.split ul{margin:0;padding-left:18px;font-size:14px;color:var(--ink-light)}
+.split li{margin:6px 0}
+.toolrow{display:grid;grid-template-columns:150px 1fr;gap:0;border-bottom:1px solid var(--rule)}
+.toolrow:last-child{border-bottom:none}
+.toolrow .tname{padding:14px 16px 14px 0;border-right:2px solid var(--rule)}
+.toolrow .tn{font-family:'DM Mono',monospace;font-size:13px;color:var(--ink);font-weight:500}
+.toolrow .tk{font-family:'DM Mono',monospace;font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;margin-top:4px;display:inline-block;padding:2px 8px;border-radius:12px}
+.tk.imp{background:rgba(26,107,82,.13);color:var(--accent-2)}
+.tk.ada{background:rgba(45,74,138,.13);color:var(--accent-3)}
+.tk.out{background:rgba(124,111,101,.15);color:var(--ink-muted)}
+.toolrow .tbody{padding:14px 0 14px 18px}
+.toolrow .tbody .twhat{font-size:14px;color:var(--ink-light);margin-bottom:4px}
+.toolrow .tbody .tus{font-size:13.5px;color:var(--ink);margin:0}
+.toolrow .tbody .tus b{color:var(--accent)}
+.mapbox{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-family:'DM Mono',monospace;font-size:12px;margin:10px 0;color:var(--ink-light)}
+.mapbox .mb{background:var(--paper-2);border:1px solid var(--rule);border-radius:7px;padding:7px 12px}
+.mapbox .ma{color:var(--accent);font-size:15px}
+.mapbox .mbg{background:rgba(26,107,82,.1);border-color:var(--accent-2);color:var(--accent-2)}
+code{font-family:'DM Mono',monospace;font-size:12.5px;background:var(--paper-2);padding:2px 6px;border-radius:4px;color:var(--accent-3)}
+</style>
+</head>
+<body>
+<button class="hamb" onclick="toggleMenu()"><span>&#9776;</span></button>
+<div class="overlay" onclick="toggleMenu()"></div>
+<aside class="sidebar">
+  <div class="brand">ETN <em>Genoma</em></div>
+  <div class="brand-sub">Addendum · Galaxy</div>
+  <nav class="nav" id="nav"></nav>
+  <div class="side-foot">Creato da Axonforce<br>Erogato da ETN<br>Costruire per Apprendere</div>
+</aside>
+<main class="content" id="content"></main>
+<script>
+const PAGES = [
+ {
+  "id": "cover",
+  "navLabel": "Copertina",
+  "num": "·",
+  "cover": true,
+  "html": "<div class=\"cover-inner\">\n  <div class=\"eyebrow\">ETN Genoma · Addendum al progetto · 2026</div>\n  <h1 class=\"cover-title\">Cosa prendiamo da <em>Galaxy</em></h1>\n  <p class=\"cover-body\">Documento integrativo al progetto dell'app. Galaxy è la piattaforma di bioinformatica più usata al mondo: prima di sostituirla, guardiamo dentro. Qui nominiamo i suoi strumenti reali e decidiamo, uno per uno, cosa importare nella nostra app in forma semplice e cosa lasciar fuori perché è proprio ciò che la rende ostica. Il criterio è uno solo: teniamo ciò che <strong>insegna biologia</strong>, buttiamo ciò che <strong>gestisce solo infrastruttura</strong>.</p>\n  <div class=\"cover-stats\">\n    <div class=\"cstat\"><div class=\"cs-num\">5</div><div class=\"cs-lab\">Strumenti chiave</div></div>\n    <div class=\"cstat\"><div class=\"cs-num\">3</div><div class=\"cs-lab\">Concetti importati</div></div>\n    <div class=\"cstat\"><div class=\"cs-num\">1</div><div class=\"cs-lab\">Criterio di scelta</div></div>\n  </div>\n</div>"
+ },
+ {
+  "id": "criterio",
+  "navLabel": "Il criterio",
+  "num": "01",
+  "eyebrow": "01 · La regola di selezione",
+  "title": "Cosa teniamo, cosa <em>buttiamo</em>",
+  "dek": "Un solo criterio decide ogni strumento di Galaxy: insegna biologia o gestisce infrastruttura?",
+  "html": "<p class=\"intro\">Galaxy ha centinaia di strumenti. Importarli tutti sarebbe rifare Galaxy — e ricadere nella complessità che ha fatto fallire il percorso in aula. Ma buttarli tutti sarebbe perdere la scienza vera. Serve un criterio netto.</p>\n<div class=\"split\">\n  <div class=\"col\"><div class=\"chd\">✓ Teniamo — insegna biologia</div>\n    <ul>\n      <li>Confrontare due sequenze e capire dove differiscono</li>\n      <li>Verificare se un dato è affidabile prima di usarlo</li>\n      <li>Trovare una differenza e capire cosa significa</li>\n      <li>Vedere il dato invece di leggerlo come numeri</li>\n    </ul>\n    <p style=\"font-size:13px;color:var(--ink-muted);margin-top:10px\">Sono gesti scientifici: un ragazzo esce sapendo <em>fare</em> qualcosa.</p>\n  </div>\n  <div class=\"col no\"><div class=\"chd\">✗ Buttiamo — gestisce infrastruttura</div>\n    <ul>\n      <li>Formati di file da capire e convertire (FASTQ, BAM, SAM)</li>\n      <li>Allineamento massivo di milioni di letture su interi genomi</li>\n      <li>Parametri tecnici da regolare per ogni strumento</li>\n      <li>Account, quote, code sui server</li>\n    </ul>\n    <p style=\"font-size:13px;color:var(--ink-muted);margin-top:10px\">È il 70% di ciò che rende Galaxy ostico, e non insegna nulla a un liceale.</p>\n  </div>\n</div>\n<div class=\"note\"><span class=\"nlabel\">La frase da tenere a mente</span> Ogni strumento di Galaxy che insegna un concetto biologico — confrontare, trovare differenze, verificare, visualizzare — lo teniamo, semplificato. Ogni strumento che gestisce infrastruttura — formati, conversioni, allineamento massivo — lo lasciamo fuori.</div>"
+ },
+ {
+  "id": "strumenti",
+  "navLabel": "I cinque strumenti",
+  "num": "02",
+  "eyebrow": "02 · Gli strumenti reali di Galaxy",
+  "title": "I <em>cinque</em> strumenti chiave",
+  "dek": "Nominati per completezza, dai tutorial didattici veri. Per ciascuno: cosa fa, e cosa ne facciamo noi.",
+  "html": "<p class=\"intro\">Nei percorsi di genomica di Galaxy ricorrono sempre gli stessi cinque strumenti (o famiglie di strumenti). Li nominiamo e decidiamo il destino di ognuno.</p>\n<div class=\"toolrow\">\n  <div class=\"tname\"><div class=\"tn\">FastQC<br>MultiQC</div><div class=\"tk ada\">Adattare</div></div>\n  <div class=\"tbody\"><div class=\"twhat\">Controllo qualità delle sequenze grezze: dicono se i dati del sequenziatore sono buoni, con decine di grafici tecnici (qualità per base, contenuto GC, duplicati).</div><p class=\"tus\"><b>Noi:</b> teniamo il concetto — <em>in scienza si verifica sempre la qualità del dato prima di fidarsene</em> — ma in versione leggera: un paio di indicatori verdi/rossi spiegati dall'AI, non venti grafici. Entra nel Modulo 1.</p></div>\n</div>\n<div class=\"toolrow\">\n  <div class=\"tname\"><div class=\"tn\">BLAST</div><div class=\"tk imp\">Importare</div></div>\n  <div class=\"tbody\"><div class=\"twhat\">Uno dei programmi bioinformatici più popolari: confronta una sequenza con un database per trovare a cosa somiglia, in quale specie, di quale gene è parente.</div><p class=\"tus\"><b>Noi:</b> è il cuore del Modulo 2. \"Ho questa sequenza, a cosa somiglia?\" è esattamente il confronto che i ragazzi capiscono. Lo teniamo, con l'AI che interpreta il risultato.</p></div>\n</div>\n<div class=\"toolrow\">\n  <div class=\"tname\"><div class=\"tn\">BWA · Bowtie<br>(mapping)</div><div class=\"tk out\">Lasciare</div></div>\n  <div class=\"tbody\"><div class=\"twhat\">Allineano milioni di letture grezze da sequenziatore su un intero genoma di riferimento. Sono il motore pesante della genomica vera.</div><p class=\"tus\"><b>Noi:</b> fuori. Servono per dati massivi da laboratorio, non per un'indagine didattica. Al loro posto, per il confronto, basta BLAST.</p></div>\n</div>\n<div class=\"toolrow\">\n  <div class=\"tname\"><div class=\"tn\">Variant calling<br>(differenze)</div><div class=\"tk imp\">Importare</div></div>\n  <div class=\"tbody\"><div class=\"twhat\">Identifica dove il DNA analizzato differisce dal riferimento: una mutazione, una variante. È il punto d'arrivo dei tutorial clinici.</div><p class=\"tus\"><b>Noi:</b> è il momento-clou del Modulo 2, semplificato. Non il macchinario del variant calling vero, ma mostrare <em>dove</em> due sequenze divergono e far spiegare all'AI cosa comporta. Lega col lab Crime Scene.</p></div>\n</div>\n<div class=\"toolrow\">\n  <div class=\"tname\"><div class=\"tn\">IGV</div><div class=\"tk ada\">Adattare</div></div>\n  <div class=\"tbody\"><div class=\"twhat\">Integrative Genomics Viewer: visualizza allineamenti e varianti su una mappa del genoma, invece che come tabelle di numeri.</div><p class=\"tus\"><b>Noi:</b> ne prendiamo il principio — <em>il dato genomico va visto, non letto</em> — che già applichiamo con Mol* per le proteine 3D e con la visualizzazione \"trova le differenze\" colorata del confronto.</p></div>\n</div>"
+ },
+ {
+  "id": "formati",
+  "navLabel": "I formati (esclusi)",
+  "num": "03",
+  "eyebrow": "03 · Il grande escluso",
+  "title": "I <em>formati</em> di file",
+  "dek": "Metà di ogni tutorial Galaxy è spesa qui. È il primo attrito che togliamo.",
+  "html": "<p class=\"intro\">C'è un pezzo di Galaxy che merita un discorso a parte, perché è il singolo più grande responsabile della difficoltà in aula: i formati di file.</p>\n<div class=\"field\"><span class=\"flabel\">FASTQ</span><div>Il formato in cui i sequenziatori restituiscono le sequenze grezze: quattro righe per ogni lettura, con codici di qualità. Da capire, aprire, controllare.</div></div>\n<div class=\"field\"><span class=\"flabel\">SAM / BAM</span><div>Il formato in cui si salvano gli allineamenti: BAM è la versione binaria (illeggibile a occhio). Undici campi obbligatori per riga, più campi opzionali.</div></div>\n<div class=\"field\"><span class=\"flabel\">Le conversioni</span><div>Buona parte del lavoro in Galaxy è convertire un formato in un altro (<code>fastqsanger</code> in <code>fastq</code>, <code>.fa.gz</code> in <code>.fa</code>), rinominare i file, non confondere l'output di uno strumento con quello di un altro.</div></div>\n<div class=\"note amber\"><span class=\"nlabel\">Perché li togliamo tutti</span> Un liceale che passa mezza giornata a convertire un file e a non confondere due dataset non sta imparando biologia: sta combattendo con l'infrastruttura. È esattamente il momento in cui, in aula, i ragazzi si perdevano e cliccavano senza capire. La nostra app <strong>nasconde i formati</strong>: lo studente vede sequenze e risultati, mai un file <code>.bam</code> da gestire. I dati arrivano già puliti dai casi didattici che prepariamo noi.</div>"
+ },
+ {
+  "id": "mappa",
+  "navLabel": "Sui nostri moduli",
+  "num": "04",
+  "eyebrow": "04 · La sintesi rassicurante",
+  "title": "Tutto entra nei <em>tre moduli</em>",
+  "dek": "I cinque strumenti chiave di Galaxy si mappano quasi perfettamente sui moduli che avevamo già.",
+  "html": "<p class=\"intro\">La conclusione di questa analisi è che non dobbiamo aggiungere quasi nulla: i concetti buoni di Galaxy stanno già dentro i tre moduli del progetto. Serve solo un piccolo innesto.</p>\n<h3 class=\"sub\">Modulo 1 · Leggere il DNA</h3>\n<div class=\"mapbox\"><span class=\"mb\">FastQC (qualità)</span><span class=\"ma\">→</span><span class=\"mb mbg\">Modulo 1</span></div>\n<p>Assorbe il <strong>controllo qualità</strong>: prima di indagare, l'app fa la domanda \"questi dati sono buoni?\". È l'innesto da aggiungere, perché insegna il metodo scientifico (non ti fidi del dato prima di verificarlo) e costa pochissima complessità.</p>\n<h3 class=\"sub\">Modulo 2 · Confrontare due geni</h3>\n<div class=\"mapbox\"><span class=\"mb\">BLAST</span><span class=\"ma\">+</span><span class=\"mb\">variant calling</span><span class=\"ma\">→</span><span class=\"mb mbg\">Modulo 2</span></div>\n<p>È <strong>BLAST + il trovare le differenze</strong> resi semplici. L'aggiunta di valore: dare risalto alla <em>differenza trovata</em> come momento scientifico — \"abbiamo trovato la differenza, e significa qualcosa\" — non come sottoprodotto tecnico.</p>\n<h3 class=\"sub\">Modulo 3 · Vedere la proteina in 3D</h3>\n<div class=\"mapbox\"><span class=\"mb\">IGV (visualizzare)</span><span class=\"ma\">→</span><span class=\"mb mbg\">Modulo 3</span></div>\n<p>Copre il principio di <strong>visualizzazione</strong> al livello più alto: dalla sequenza alla struttura 3D con Mol*. Il \"vedere il dato\" di IGV, portato sulle proteine.</p>\n<div class=\"card\"><div class=\"ceyebrow\">Il regalo di Galaxy da non perdere</div>\n<div class=\"ctitle-lg\">Ogni risultato porta con sé la <em>storia</em> di come ci sei arrivato: il dossier come metodo scientifico reso visibile.</div>\n<p>Al di là dei singoli strumenti, il lascito di Galaxy è l'ossessione per la tracciabilità: un risultato scientifico deve dire quali dati, quali passi, in che ordine. Nella nostra app diventa il dossier come racconto del percorso — non \"ecco la proteina\", ma \"siamo partiti da questa domanda, abbiamo confrontato, trovato, guardato, concluso\". Insegna che in scienza il metodo conta quanto il risultato.</p></div>"
+ }
+];
+const nav=document.getElementById('nav'), content=document.getElementById('content');
+let lastGroup=null;
+PAGES.forEach((p,i)=>{
+  if(p.group && p.group!==lastGroup){const g=document.createElement('div');g.className='nav-group';g.textContent=p.group;nav.appendChild(g);lastGroup=p.group;}
+  const a=document.createElement('a');a.dataset.id=p.id;
+  a.innerHTML=`<span class="n">${p.num}</span><span class="l">${p.navLabel}</span>`;
+  a.onclick=()=>goTo(p.id);nav.appendChild(a);
+  const page=document.createElement('section');page.className='page'+(p.cover?' cover':'');page.id='pg-'+p.id;
+  let inner='';
+  if(p.cover){inner=p.html;}else{
+    if(p.eyebrow)inner+=`<div class="eyebrow">${p.eyebrow}</div>`;
+    if(p.title)inner+=`<h1 class="ptitle">${p.title}</h1>`;
+    if(p.dek)inner+=`<div class="dek">${p.dek}</div>`;
+    inner+=p.html;}
+  const prev=PAGES[i-1],next=PAGES[i+1];let pn='<div class="pnav">';
+  if(prev)pn+=`<a onclick="goTo('${prev.id}')"><div class="pn-dir">&larr; Precedente</div><div class="pn-lab">${prev.navLabel}</div></a>`;
+  if(next)pn+=`<a class="next" onclick="goTo('${next.id}')"><div class="pn-dir">Successivo &rarr;</div><div class="pn-lab">${next.navLabel}</div></a>`;
+  pn+='</div>';inner+=pn;page.innerHTML=inner;content.appendChild(page);
+});
+function goTo(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('pg-'+id).classList.add('active');
+  document.querySelectorAll('.nav a').forEach(a=>a.classList.toggle('active',a.dataset.id===id));
+  content.scrollTo(0,0);window.scrollTo(0,0);
+  if(window.innerWidth<=900){document.querySelector('.sidebar').classList.remove('open');document.querySelector('.overlay').classList.remove('show');}
+  if(history.replaceState)history.replaceState(null,'','#'+id);
+}
+function toggleMenu(){document.querySelector('.sidebar').classList.toggle('open');document.querySelector('.overlay').classList.toggle('show');}
+const start=(location.hash||'').replace('#','');
+goTo(PAGES.some(p=>p.id===start)?start:PAGES[0].id);
+</script>
+</body>
+</html>
