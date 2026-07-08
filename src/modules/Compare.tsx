@@ -14,7 +14,7 @@ import {
   ProjectWork,
 } from '../components/ui';
 import { AiTutor } from '../components/AiTutor';
-import { alignSequences, describeDifferences } from '../lib/alignment';
+import { alignSequences, describeDifferences, MAX_SEQ_LENGTH } from '../lib/alignment';
 
 const ROW = 45; // basi per riga nella visualizzazione allineata
 
@@ -24,10 +24,13 @@ export function Compare({ onNavigate }: { onNavigate: (p: PageId) => void }) {
   const a = currentCase?.sequences[0];
   const b = currentCase?.sequences[1];
 
+  const tooLong =
+    !!a && !!b && (a.dna.length > MAX_SEQ_LENGTH || b.dna.length > MAX_SEQ_LENGTH);
+
   const result = useMemo(() => {
-    if (!a || !b) return null;
+    if (!a || !b || tooLong) return null;
     return alignSequences(a.dna, b.dna, a.label, b.label);
-  }, [a, b]);
+  }, [a, b, tooLong]);
 
   const differences = useMemo(
     () => (result ? describeDifferences(result.alignedA, result.alignedB) : []),
@@ -36,6 +39,22 @@ export function Compare({ onNavigate }: { onNavigate: (p: PageId) => void }) {
 
   if (!currentCase) {
     return <NoCaseNotice moduleLabel="Modulo 2" onNavigate={onNavigate} />;
+  }
+  if (tooLong) {
+    return (
+      <div className="fade-up">
+        <Stepper current="compare" onNavigate={onNavigate} />
+        <PageHeader
+          eyebrow="Modulo 2 · Confrontare due geni"
+          title="Sequenze troppo lunghe"
+        />
+        <p className="text-[15px]">
+          Il confronto in aula funziona su tratti brevi di gene (fino a{' '}
+          {MAX_SEQ_LENGTH} basi). Le sequenze inserite sono più lunghe: usa un frammento
+          più corto della regione che ti interessa.
+        </p>
+      </div>
+    );
   }
   if (!a || !b || !result) {
     return (
@@ -87,8 +106,10 @@ export function Compare({ onNavigate }: { onNavigate: (p: PageId) => void }) {
     `Differenze (mismatch): ${result.mismatches}`,
     `Gap (inserzioni/delezioni): ${result.gaps}`,
     differences.length > 0
-      ? `Differenze trovate: ${differences.map(diffText).join('; ')}`
-      : 'Nessuna differenza puntuale.',
+      ? `Differenze trovate (calcolate dall'algoritmo, non da te): ${differences
+          .map(diffText)
+          .join('; ')}`
+      : 'Le due sequenze sono identiche.',
     `Allineamento calcolato (Needleman-Wunsch):`,
     result.alignedA,
     result.matchLine,
@@ -170,38 +191,90 @@ export function Compare({ onNavigate }: { onNavigate: (p: PageId) => void }) {
             {differences.length === 1 ? 'differenza che conta' : 'differenze che contano'}
           </div>
           <div className="space-y-3">
-            {differences.map((d) => (
-              <div key={d.position} className="border-b border-white/10 pb-3 last:border-0 last:pb-0">
-                <div className="font-serif text-lg text-paper">
-                  Posizione {d.position}:{' '}
-                  <span className="text-[#e8935f]">
-                    {d.fromBase} → {d.toBase}
-                  </span>
-                </div>
-                {d.fromAA && d.toAA && (
-                  <p className="text-[14px] text-[#c9bfb4] mt-1">
-                    {d.silent ? (
-                      <>
-                        Cade nel codone {d.codonNumber}, ma l'amminoacido resta{' '}
-                        <strong className="text-paper">
-                          {d.fromAAName} ({d.fromAA})
-                        </strong>
-                        : è una <em>mutazione silente</em> — il DNA cambia, la proteina no.
-                      </>
+            {differences.map((d, i) => (
+              <div key={i} className="border-b border-white/10 pb-3 last:border-0 last:pb-0">
+                {d.kind === 'sostituzione' ? (
+                  <>
+                    <div className="font-serif text-lg text-paper">
+                      Posizione {d.position}:{' '}
+                      <span className="text-[#e8935f]">
+                        {d.fromBase} → {d.toBase}
+                      </span>
+                    </div>
+                    {d.fromAA && d.toAA ? (
+                      <p className="text-[14px] text-[#c9bfb4] mt-1">
+                        {d.silent ? (
+                          <>
+                            Cade nel codone {d.codonNumber}, ma l'amminoacido resta{' '}
+                            <strong className="text-paper">
+                              {d.fromAAName} ({d.fromAA})
+                            </strong>
+                            : è una <em>mutazione silente</em> — il DNA cambia, la proteina no.
+                          </>
+                        ) : (
+                          <>
+                            Nel codone {d.codonNumber} l'amminoacido cambia da{' '}
+                            <strong className="text-paper">
+                              {d.fromAAName} ({d.fromAA})
+                            </strong>{' '}
+                            a{' '}
+                            <strong className="text-[#e8935f]">
+                              {d.toAAName} ({d.toAA})
+                            </strong>
+                            . Una lettera del DNA, un amminoacido diverso.
+                          </>
+                        )}
+                      </p>
                     ) : (
-                      <>
-                        Nel codone {d.codonNumber} l'amminoacido cambia da{' '}
-                        <strong className="text-paper">
-                          {d.fromAAName} ({d.fromAA})
-                        </strong>{' '}
-                        a{' '}
-                        <strong className="text-[#e8935f]">
-                          {d.toAAName} ({d.toAA})
-                        </strong>
-                        . Una lettera del DNA, un amminoacido diverso.
-                      </>
+                      <p className="text-[14px] text-[#c9bfb4] mt-1">
+                        Una base cambia; qui l'effetto sull'amminoacido non è calcolabile in
+                        modo affidabile perché un indel a monte ha sfasato la lettura.
+                      </p>
                     )}
-                  </p>
+                  </>
+                ) : (
+                  <>
+                    <div className="font-serif text-lg text-paper">
+                      {d.kind === 'delezione' ? 'Delezione' : 'Inserzione'} di {d.length}{' '}
+                      basi{' '}
+                      <span className="text-[#e8935f]">alla posizione {d.position}</span>
+                    </div>
+                    <p className="text-[14px] text-[#c9bfb4] mt-1">
+                      {d.frameshift ? (
+                        <>
+                          {d.length} basi non sono un multiplo di 3: la lettura{' '}
+                          <em>slitta</em> e da qui in poi tutti i codoni cambiano
+                          (frameshift).
+                        </>
+                      ) : d.residues ? (
+                        d.kind === 'delezione' ? (
+                          <>
+                            La proteina{' '}
+                            <strong className="text-paper">
+                              perde {d.residues.length} amminoacid
+                              {d.residues.length === 1 ? 'o' : 'i'}
+                            </strong>{' '}
+                            ({residueSummary(d)}): un pezzo che manca, come nella
+                            fibrosi cistica.
+                          </>
+                        ) : (
+                          <>
+                            La proteina{' '}
+                            <strong className="text-[#e8935f]">
+                              guadagna {d.residues.length} amminoacid
+                              {d.residues.length === 1 ? 'o' : 'i'}
+                            </strong>{' '}
+                            ({residueSummary(d)}): un pezzo in più.
+                          </>
+                        )
+                      ) : (
+                        <>
+                          {d.length} basi {d.kind === 'delezione' ? 'tolte' : 'aggiunte'} in
+                          blocco.
+                        </>
+                      )}
+                    </p>
+                  </>
                 )}
               </div>
             ))}
@@ -221,10 +294,10 @@ export function Compare({ onNavigate }: { onNavigate: (p: PageId) => void }) {
       </Note>
 
       <Esercizio
-        consegna="Quante basi sono diverse tra le due sequenze? (guarda «basi diverse» qui sopra)"
-        expected={String(result.mismatches)}
-        placeholder={`es. ${result.mismatches}`}
-        explanation={`Le sequenze combaciano al ${result.identityPct}%: ci sono ${result.mismatches} basi diverse e ${result.gaps} gap.`}
+        consegna="Guarda le statistiche qui sopra: quante posizioni differiscono in tutto? (basi diverse + gap)"
+        expected={String(result.mismatches + result.gaps)}
+        placeholder={`es. ${result.mismatches + result.gaps}`}
+        explanation={`Le sequenze combaciano al ${result.identityPct}%: ${result.mismatches} basi diverse + ${result.gaps} gap = ${result.mismatches + result.gaps} posizioni differenti.`}
       />
 
       <ProjectWork
@@ -285,16 +358,41 @@ export function Compare({ onNavigate }: { onNavigate: (p: PageId) => void }) {
   );
 }
 
+/** Riassume gli amminoacidi di un indel (es. "25 × Glutammina (Q)" o "Fenilalanina (F)"). */
+function residueSummary(d: import('../lib/alignment').Difference): string {
+  const codes = d.residues ?? '';
+  const names = d.residueNames ?? [];
+  if (names.length === 0) return '';
+  const uniq = new Set(codes.split(''));
+  if (uniq.size === 1) {
+    const code = codes[0];
+    const name = names[0];
+    return codes.length === 1 ? `${name} (${code})` : `${codes.length} × ${name} (${code})`;
+  }
+  return names.join(', ');
+}
+
 /** Descrive una differenza in una frase italiana (per AI e dossier). */
 function diffText(d: import('../lib/alignment').Difference): string {
-  const base = `posizione ${d.position} ${d.fromBase}→${d.toBase}`;
-  if (d.fromAA && d.toAA) {
-    if (d.silent) {
-      return `${base} (codone ${d.codonNumber}, amminoacido invariato ${d.fromAAName}: mutazione silente)`;
+  if (d.kind === 'sostituzione') {
+    const base = `posizione ${d.position} ${d.fromBase}→${d.toBase}`;
+    if (d.fromAA && d.toAA) {
+      return d.silent
+        ? `${base} (codone ${d.codonNumber}, amminoacido invariato ${d.fromAAName}: mutazione silente)`
+        : `${base} (codone ${d.codonNumber}, amminoacido ${d.fromAAName}→${d.toAAName})`;
     }
-    return `${base} (codone ${d.codonNumber}, amminoacido ${d.fromAAName}→${d.toAAName})`;
+    return `${base} (effetto sull'amminoacido non calcolabile per un indel a monte)`;
   }
-  return base;
+  const what = d.kind === 'delezione' ? 'delezione' : 'inserzione';
+  if (d.frameshift) {
+    return `${what} di ${d.length} basi alla posizione ${d.position} (frameshift)`;
+  }
+  if (d.residues) {
+    return `${what} in-frame di ${d.length} basi alla posizione ${d.position} (${
+      d.kind === 'delezione' ? 'rimuove' : 'aggiunge'
+    } ${residueSummary(d)})`;
+  }
+  return `${what} di ${d.length} basi alla posizione ${d.position}`;
 }
 
 /** Riga di sequenza colorata secondo la stringa di corrispondenza. */

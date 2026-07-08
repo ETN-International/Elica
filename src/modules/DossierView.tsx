@@ -21,23 +21,39 @@ const KIND_LABEL: Record<DossierEntry['kind'], string> = {
   conclusione: 'La conclusione',
 };
 
+function slugify(s: string): string {
+  return (
+    s
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[̀-ͯ]/g, '')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '') || 'squadra'
+  );
+}
+
 export function DossierView({ onNavigate }: { onNavigate: (p: PageId) => void }) {
-  const { currentCase, dossier, addEntry, removeEntry } = useStore();
+  const { currentCase, dossier, addEntry, removeEntry, resetDossier } = useStore();
   const [conclusion, setConclusion] = useState('');
 
   if (!currentCase) {
     return <NoCaseNotice moduleLabel="Il dossier" onNavigate={onNavigate} />;
   }
 
-  const hasQuestion = dossier.entries.some((e) => e.kind === 'domanda');
+  // La domanda è considerata presente se esiste per il caso corrente.
+  const hasQuestion = dossier.entries.some(
+    (e) => e.kind === 'domanda' && (!e.caseId || e.caseId === dossier.caseId),
+  );
+
+  const exportTitle = `Dossier della squadra ${dossier.team || '—'}`;
 
   function exportHtml() {
-    const html = dossierToHtml(dossier, currentCase!.title);
+    const html = dossierToHtml(dossier, exportTitle);
     const blob = new Blob([html], { type: 'text/html' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `dossier-${currentCase!.id}.html`;
+    a.download = `dossier-${slugify(dossier.team)}.html`;
     a.click();
     URL.revokeObjectURL(url);
   }
@@ -77,13 +93,31 @@ export function DossierView({ onNavigate }: { onNavigate: (p: PageId) => void })
             Squadra: {dossier.team || '—'}
           </div>
         </div>
-        <button
-          onClick={exportHtml}
-          disabled={dossier.entries.length === 0}
-          className="rounded-lg bg-ink text-paper px-4 py-2 text-sm font-medium disabled:opacity-40 transition hover:bg-ink-light"
-        >
-          Esporta il dossier ↓
-        </button>
+        <div className="flex items-center gap-2 shrink-0">
+          {dossier.entries.length > 0 && (
+            <button
+              onClick={() => {
+                if (
+                  confirm(
+                    'Azzerare il dossier? Tutte le voci raccolte verranno eliminate (utile per una nuova squadra).',
+                  )
+                ) {
+                  resetDossier();
+                }
+              }}
+              className="rounded-lg border border-rule px-3 py-2 text-sm text-ink-muted hover:text-accent hover:border-accent/40 transition"
+            >
+              Azzera
+            </button>
+          )}
+          <button
+            onClick={exportHtml}
+            disabled={dossier.entries.length === 0}
+            className="rounded-lg bg-ink text-paper px-4 py-2 text-sm font-medium disabled:opacity-40 transition hover:bg-ink-light"
+          >
+            Esporta il dossier ↓
+          </button>
+        </div>
       </div>
 
       {!hasQuestion && (

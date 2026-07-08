@@ -19,8 +19,16 @@ export function loadDossier(): Dossier {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return emptyDossier();
     const parsed = JSON.parse(raw) as Dossier;
-    if (!parsed.entries) return emptyDossier();
-    return { ...parsed, members: parsed.members ?? [] };
+    // Validazione difensiva: se lo storage è corrotto/malformato, riparti pulito.
+    if (!parsed || typeof parsed !== 'object' || !Array.isArray(parsed.entries)) {
+      return emptyDossier();
+    }
+    return {
+      caseId: typeof parsed.caseId === 'string' ? parsed.caseId : null,
+      team: typeof parsed.team === 'string' ? parsed.team : '',
+      members: Array.isArray(parsed.members) ? parsed.members : [],
+      entries: parsed.entries,
+    };
   } catch {
     return emptyDossier();
   }

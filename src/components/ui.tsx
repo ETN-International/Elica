@@ -21,7 +21,13 @@ export function Stepper({
   onNavigate: (p: PageId) => void;
 }) {
   const { dossier } = useStore();
-  const kinds = new Set(dossier.entries.map((e) => e.kind));
+  // Solo le voci del caso corrente: lo Stepper riflette l'indagine in corso,
+  // non l'intero dossier cumulativo.
+  const kinds = new Set(
+    dossier.entries
+      .filter((e) => !dossier.caseId || e.caseId === dossier.caseId)
+      .map((e) => e.kind),
+  );
   const steps: StepDef[] = [
     { id: 'dna', n: '1', label: 'Leggi', done: kinds.has('dna') },
     { id: 'compare', n: '2', label: 'Confronta', done: kinds.has('confronto') },
@@ -259,6 +265,7 @@ export function Esercizio({
             setVal(e.target.value);
             setChecked(false);
           }}
+          aria-label="Risposta all'esercizio"
           placeholder={placeholder ?? 'La tua risposta…'}
           className="flex-1 min-w-40 rounded-lg border border-rule bg-white/60 px-3 py-2 text-sm text-ink focus:outline-none focus:border-accent"
           onKeyDown={(e) => {
@@ -320,6 +327,7 @@ export function ProjectWork({
           setSaved(false);
         }}
         rows={3}
+        aria-label="Risposta della squadra (project work)"
         placeholder={placeholder ?? 'La risposta della squadra…'}
         className="w-full rounded-lg border border-rule bg-white/60 px-3 py-2 text-[14px] text-ink focus:outline-none focus:border-accent-3"
       />

@@ -191,6 +191,8 @@ export function Libera({ onNavigate }: { onNavigate: (p: PageId) => void }) {
               value={row.s.dna}
               onChange={(e) => row.set({ ...row.s, dna: e.target.value })}
               rows={3}
+              maxLength={3200}
+              aria-label={`Sequenza di DNA — ${row.ph}`}
               placeholder="ATGC…"
               className="w-full rounded-md border border-rule bg-white/60 px-2.5 py-1.5 text-[12px] font-mono text-ink focus:outline-none focus:border-accent"
             />

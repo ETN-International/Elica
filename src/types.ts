@@ -82,6 +82,8 @@ export interface AlignmentResult {
 export interface DossierEntry {
   id: string;
   createdAt: number;
+  /** Caso a cui appartiene la voce (per distinguere le indagini nel dossier cumulativo). */
+  caseId?: string;
   kind: 'domanda' | 'dna' | 'confronto' | 'proteina' | 'conclusione';
   title: string;
   /** Testo/commento della squadra. */

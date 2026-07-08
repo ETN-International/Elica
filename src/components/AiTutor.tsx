@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { ChatMessage } from '../types';
 import { AiNotConfiguredError, askAi, isAiConfigured } from '../lib/ai';
 
@@ -37,6 +37,12 @@ export function AiTutor({
       : 'Tutor AI non ancora collegato: i moduli scientifici funzionano comunque.',
   );
   const listRef = useRef<HTMLDivElement>(null);
+  const abortRef = useRef<AbortController | null>(null);
+
+  // Allo smontaggio del componente, annulla la richiesta al tutor in volo.
+  useEffect(() => {
+    return () => abortRef.current?.abort();
+  }, []);
 
   async function send(text: string) {
     const question = text.trim();
@@ -48,10 +54,20 @@ export function AiTutor({
     setBusy(true);
     setNotice(null);
 
+    const controller = new AbortController();
+    abortRef.current = controller;
     try {
-      const reply = await askAi({ prompt: question, context, history });
+      const reply = await askAi({
+        prompt: question,
+        context,
+        history,
+        signal: controller.signal,
+      });
       setMessages([...next, { role: 'assistant', content: reply }]);
     } catch (err) {
+      if (err instanceof DOMException && err.name === 'AbortError') {
+        return; // componente smontato: nessun aggiornamento di stato
+      }
       if (err instanceof AiNotConfiguredError) {
         setNotice(err.message);
         setMessages(history); // togli la domanda rimasta senza risposta
@@ -145,6 +161,7 @@ export function AiTutor({
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
+          aria-label="Domanda al tutor"
           placeholder="Fai una domanda al tutor…"
           className="flex-1 rounded-lg bg-[#2a2620] border border-[#4a423a] px-3 py-2 text-sm text-paper placeholder:text-[#8a7f73] focus:outline-none focus:border-[#e8935f]"
         />

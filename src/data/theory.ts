@@ -82,20 +82,6 @@ export const PROGRAM: ProgramStage[] = [
 
 export const TOTAL_HOURS = PROGRAM.reduce((s, p) => s + p.hours, 0);
 
-/** Una singola unità di attività (checkabile) dentro una tappa. */
-export interface ProgramUnit {
-  id: string;
-  label: string;
-}
-
-/** Le unità di una tappa, con ID stabili per il salvataggio. */
-export function stageUnits(stage: ProgramStage): ProgramUnit[] {
-  return stage.activities.map((a, i) => ({ id: `u-${stage.n}-${i}`, label: a }));
-}
-
-/** Tutte le unità del programma. */
-export const ALL_UNITS: ProgramUnit[] = PROGRAM.flatMap(stageUnits);
-
 export interface TheoryCard {
   id: string;
   title: string;

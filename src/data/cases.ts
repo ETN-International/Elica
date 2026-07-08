@@ -57,19 +57,22 @@ export const CASES: Case[] = [
     question:
       'Perché troppe ripetizioni CAG nel gene della huntingtina causano la malattia?',
     intro:
-      "Alcune malattie nascono da una tripletta (CAG) che si ripete troppe volte. Confronta la versione normale con quella espansa: l'allineamento mostra le ripetizioni in più, e la proteina accumula tante glutammine (Q).",
+      "Alcune malattie nascono da una tripletta (CAG) che si ripete troppe volte. Confronta un allele normale (20 ripetizioni) con uno espanso (45): l'allineamento mostra le ripetizioni in più, e la proteina accumula tante glutammine (Q). Nella realtà la malattia compare da circa 36-40 ripetizioni.",
     theme: 'Malattie genetiche',
     difficulty: 3,
     sequences: [
-      { label: 'Huntingtina normale (6× CAG)', dna: 'ATGGCCCAGCAGCAGCAGCAGCAGCCTGAA' },
       {
-        label: 'Huntingtina espansa (12× CAG)',
-        dna: 'ATGGCCCAGCAGCAGCAGCAGCAGCAGCAGCAGCAGCAGCAGCCTGAA',
+        label: 'Huntingtina normale (20× CAG)',
+        dna: 'ATGGCC' + 'CAG'.repeat(20) + 'CCTGAA',
+      },
+      {
+        label: 'Huntingtina espansa (45× CAG)',
+        dna: 'ATGGCC' + 'CAG'.repeat(45) + 'CCTGAA',
       },
     ],
     protein: { uniprot: 'P42858', name: 'Huntingtina umana (HTT)' },
     provenance:
-      "Estratti didattici dell'espansione del tratto CAG. Struttura 3D reale (UniProt P42858).",
+      "Estratti didattici. I numeri seguono la soglia reale: fino a ~26 ripetizioni CAG l'allele è sano, la malattia compare da ~36-40. Struttura 3D reale (UniProt P42858).",
   },
 
   // ── Evoluzione e specie ──────────────────────────────────────────────

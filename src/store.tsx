@@ -30,7 +30,20 @@ interface Progress {
 function loadCustom(): Case | null {
   try {
     const raw = localStorage.getItem(CUSTOM_KEY);
-    return raw ? (JSON.parse(raw) as Case) : null;
+    if (!raw) return null;
+    const c = JSON.parse(raw) as Case;
+    // Un caso custom valido deve avere id, sequences (array) e protein.uniprot.
+    if (
+      !c ||
+      typeof c !== 'object' ||
+      typeof c.id !== 'string' ||
+      !Array.isArray(c.sequences) ||
+      !c.protein ||
+      typeof c.protein.uniprot !== 'string'
+    ) {
+      return null;
+    }
+    return c;
   } catch {
     return null;
   }
@@ -122,7 +135,11 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
 
   const addEntry = useCallback(
     (entry: Omit<DossierEntry, 'id' | 'createdAt'>) => {
-      setDossier((d) => ({ ...d, entries: [...d.entries, makeEntry(entry)] }));
+      setDossier((d) => ({
+        ...d,
+        // La voce viene marcata con il caso corrente (per lo Stepper per-caso).
+        entries: [...d.entries, makeEntry({ caseId: d.caseId ?? undefined, ...entry })],
+      }));
     },
     [],
   );

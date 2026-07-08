@@ -9,7 +9,8 @@ export type MutationCategory =
   | 'silente'
   | 'missenso'
   | 'nonsenso'
-  | 'frameshift';
+  | 'frameshift'
+  | 'inframe-indel';
 
 export interface MutationEffect {
   /** Proteina originale (codice a una lettera). */
@@ -77,6 +78,21 @@ export function classifyMutation(original: string, mutated: string): MutationEff
     };
   }
 
+  // Indel multiplo di 3 (in-frame): la proteina cambia LUNGHEZZA (amminoacidi
+  // aggiunti o rimossi), NON è una sostituzione.
+  if (lenDiff !== 0) {
+    const nAA = Math.abs(lenDiff) / 3;
+    const added = lenDiff > 0;
+    return {
+      originalProtein,
+      mutatedProtein,
+      category: 'inframe-indel',
+      note: added
+        ? `Sono stati aggiunti ${nAA} amminoacidi senza spostare la lettura: la proteina si allunga (inserzione in-frame). Non è una sostituzione: è un pezzo in più.`
+        : `Sono stati rimossi ${nAA} amminoacidi senza spostare la lettura: la proteina si accorcia (delezione in-frame, come la ΔF508 della fibrosi cistica). Non è una sostituzione: manca un pezzo.`,
+    };
+  }
+
   // Stessa cornice di lettura: confronto amminoacido per amminoacido.
   if (mutatedProtein === originalProtein) {
     return {
@@ -126,4 +142,5 @@ export const CATEGORY_STYLE: Record<
   missenso: { label: 'Missenso', color: 'var(--color-accent)' },
   nonsenso: { label: 'Nonsenso', color: 'var(--color-accent)' },
   frameshift: { label: 'Frameshift', color: 'var(--color-accent)' },
+  'inframe-indel': { label: 'Indel in-frame', color: 'var(--color-accent-3)' },
 };

@@ -64,6 +64,7 @@ export function Mutazioni({ onNavigate }: { onNavigate: (p: PageId) => void }) {
     { id: 'missenso', label: 'Missenso' },
     { id: 'nonsenso', label: 'Nonsenso' },
     { id: 'frameshift', label: 'Frameshift' },
+    { id: 'inframe-indel', label: 'Indel in-frame' },
   ];
 
   function clickBase(i: number) {
