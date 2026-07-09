@@ -147,10 +147,11 @@ function buildUserContent(prompt: string, attachments?: ChatAttachment[]): Spark
     text += `\n\n─── File allegato: ${t.name} ───\n${(t.text ?? '').slice(0, 12000)}`;
   }
   if (imgs.length === 0) return text;
-  return [
-    { type: 'text', text },
-    ...imgs.map((a) => ({ type: 'image_url', image_url: { url: a.dataUrl as string } })),
-  ];
+  const parts: SparkPart[] = [{ type: 'text', text }];
+  for (const a of imgs) {
+    parts.push({ type: 'image_url', image_url: { url: a.dataUrl as string } });
+  }
+  return parts;
 }
 
 /**

@@ -8,3 +8,6 @@ dist-ssr
 .vscode/*
 !.vscode/extensions.json
 supabase/.temp
+
+# Cache incrementale di TypeScript (artefatto di build, non va versionato)
+*.tsbuildinfo

@@ -431,7 +431,7 @@ function PhaseD({
               Vai al catalogo delle indagini →
             </button>
           </Note>
-          <PhaseTutor phaseLabel={tag} teamInput={submitted} cardine={cardine} />
+          <PhaseTutor phaseLabel={tag} teamInput={submitted} cardine={cardine} brief={brief} />
         </>
       )}
     </>
