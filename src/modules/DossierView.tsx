@@ -12,6 +12,7 @@ import {
 import { AiTutor } from '../components/AiTutor';
 import { dossierToHtml } from '../lib/dossier';
 import type { DossierEntry } from '../types';
+import { SCREEN_BRIEFINGS } from '../data/tutorBriefings';
 
 const KIND_LABEL: Record<DossierEntry['kind'], string> = {
   domanda: 'La domanda',
@@ -59,6 +60,7 @@ export function DossierView({ onNavigate }: { onNavigate: (p: PageId) => void })
   }
 
   const aiContext = [
+    SCREEN_BRIEFINGS.dossier,
     `Caso: ${currentCase.title}`,
     `Domanda: ${currentCase.question}`,
     'Elementi già raccolti nel dossier:',

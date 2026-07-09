@@ -71,7 +71,8 @@ export function Libera({ onNavigate }: { onNavigate: (p: PageId) => void }) {
       provenance: 'Indagine creata dalla squadra in modalità libera.',
     };
     startCustomCase(c);
-    onNavigate(sequences.length > 0 ? 'dna' : 'protein');
+    // Mobilità: la prima cosa è sempre la forma 3D.
+    onNavigate('protein');
   }
 
   const canStart = uniprot.trim().length >= 4;

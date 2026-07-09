@@ -16,6 +16,7 @@ import {
 import { AiTutor } from '../components/AiTutor';
 import { MolstarViewer } from '../components/MolstarViewer';
 import { fetchAlphaFoldModel } from '../lib/alphafold';
+import { SCREEN_BRIEFINGS } from '../data/tutorBriefings';
 
 export function Protein({ onNavigate }: { onNavigate: (p: PageId) => void }) {
   const { currentCase, addEntry } = useStore();
@@ -55,6 +56,7 @@ export function Protein({ onNavigate }: { onNavigate: (p: PageId) => void }) {
 
   const aiContext = model
     ? [
+        SCREEN_BRIEFINGS.protein,
         `Caso: ${currentCase.title}`,
         `Domanda biologica: ${currentCase.question}`,
         `Proteina mostrata in 3D: ${model.proteinName ?? currentCase.protein.name}`,
@@ -65,7 +67,7 @@ export function Protein({ onNavigate }: { onNavigate: (p: PageId) => void }) {
       ]
         .filter(Boolean)
         .join('\n')
-    : `Caso: ${currentCase.title}. Proteina: ${currentCase.protein.name} (UniProt ${currentCase.protein.uniprot}).`;
+    : `${SCREEN_BRIEFINGS.protein}\nCaso: ${currentCase.title}. Proteina: ${currentCase.protein.name} (UniProt ${currentCase.protein.uniprot}).`;
 
   return (
     <div className="fade-up">
@@ -173,10 +175,10 @@ export function Protein({ onNavigate }: { onNavigate: (p: PageId) => void }) {
               }
             />
             <button
-              onClick={() => onNavigate('dossier')}
+              onClick={() => onNavigate('compare')}
               className="text-sm font-mono text-accent hover:underline"
             >
-              Vai al dossier <span className="nudge">→</span>
+              Confronta i geni <span className="nudge">→</span>
             </button>
           </div>
         </>

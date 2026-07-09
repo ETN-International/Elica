@@ -33,7 +33,8 @@ export function Home({ onNavigate }: { onNavigate: (p: PageId) => void }) {
                     key={c.id}
                     onClick={() => {
                       selectCase(c.id);
-                      onNavigate('dna');
+                      // Mobilità: si parte dalla forma 3D (concreta), non dal DNA.
+                      onNavigate('protein');
                     }}
                     className={`text-left rounded-xl border p-5 transition-all duration-200 h-full flex flex-col hover:-translate-y-0.5 hover:shadow-[0_8px_24px_-12px_rgba(26,23,20,.3)] ${
                       active

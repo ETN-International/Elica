@@ -101,8 +101,20 @@ export interface Dossier {
   entries: DossierEntry[];
 }
 
+/** Un file allegato dalla squadra al tutor (immagine da "vedere" o testo da leggere). */
+export interface ChatAttachment {
+  kind: 'image' | 'text';
+  name: string;
+  /** Immagini: data URL base64 (data:image/…;base64,…), che il modello multimodale vede. */
+  dataUrl?: string;
+  /** File di testo: il contenuto, inserito nel messaggio. */
+  text?: string;
+}
+
 /** Un messaggio nella conversazione con il tutor AI. */
 export interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
+  /** Allegati mostrati dalla squadra insieme al messaggio (solo lato utente). */
+  attachments?: ChatAttachment[];
 }

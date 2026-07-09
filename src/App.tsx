@@ -8,12 +8,16 @@ import { DossierView } from './modules/DossierView';
 import { Libera } from './modules/Libera';
 import { Mutazioni } from './modules/Mutazioni';
 import { Squadra } from './modules/Squadra';
+import { Giorno0 } from './modules/Giorno0';
+import { PerChiConduce } from './modules/PerChiConduce';
 import { Programma } from './modules/Programma';
 import { Teoria } from './modules/Teoria';
 import { Quiz } from './modules/Quiz';
 import { Valutazione } from './modules/Valutazione';
 
 export type PageId =
+  | 'giorno0'
+  | 'host'
   | 'programma'
   | 'squadra'
   | 'home'
@@ -28,6 +32,8 @@ export type PageId =
   | 'valutazione';
 
 const VALID: PageId[] = [
+  'giorno0',
+  'host',
   'programma',
   'squadra',
   'home',
@@ -82,6 +88,8 @@ export function App() {
 
       <main className="md:ml-[290px] min-h-screen">
         <div className="max-w-[880px] px-6 md:px-16 py-16 md:py-16">
+          {page === 'giorno0' && <Giorno0 onNavigate={navigate} />}
+          {page === 'host' && <PerChiConduce onNavigate={navigate} />}
           {page === 'programma' && <Programma onNavigate={navigate} />}
           {page === 'squadra' && <Squadra onNavigate={navigate} />}
           {page === 'home' && <Home onNavigate={navigate} />}

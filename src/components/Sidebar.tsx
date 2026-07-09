@@ -48,7 +48,35 @@ export function Sidebar({
           SmartLab · Genomica
         </div>
 
-        <div className="flex items-center justify-between px-1 mt-5 mb-1.5">
+        {/* Ingresso: Giorno 0 e ruolo host */}
+        <div className="mt-5 flex flex-col gap-0.5">
+          {(
+            [
+              ['giorno0', '★', 'Giorno 0 · Ingresso'],
+              ['host', '☰', 'Per chi conduce'],
+            ] as [PageId, string, string][]
+          ).map(([id, icon, label]) => (
+            <button
+              key={id}
+              onClick={() => {
+                onNavigate(id);
+                onClose();
+              }}
+              className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-left transition ${
+                page === id
+                  ? 'bg-[rgba(200,66,10,.16)] text-white shadow-[inset_3px_0_0_var(--color-accent)]'
+                  : 'text-[#c9bfb4] hover:bg-white/5 hover:text-paper'
+              }`}
+            >
+              <span className="font-mono text-[11px] text-accent min-w-4 text-center">
+                {icon}
+              </span>
+              <span className="text-[12.5px] font-medium leading-tight">{label}</span>
+            </button>
+          ))}
+        </div>
+
+        <div className="flex items-center justify-between px-1 mt-4 mb-1.5">
           <span className="font-mono text-[8.5px] tracking-[.2em] uppercase text-[#6b5f54]">
             Il percorso · 10 giorni
           </span>

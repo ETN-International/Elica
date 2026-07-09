@@ -42,24 +42,24 @@ export const DAYS: CourseDay[] = [
     ],
     afternoon: [
       a('d1-p1', "Scegli l'indagine «Emoglobina»", 'home'),
-      a('d1-p2', 'Leggi il DNA del caso', 'dna', true),
+      a('d1-p2', 'Osserva la proteina 3D del caso', 'protein', true),
       a('d1-p3', 'Quiz «Le basi»', 'quiz'),
     ],
     output: a('d1-out', 'Output: prima sequenza salvata nel dossier', 'dossier', true),
   },
   {
     n: 2,
-    title: 'Leggere il DNA',
-    focus: 'Modulo · Leggere il DNA',
+    title: 'La forma che fa la funzione',
+    focus: 'Modulo · Proteina 3D',
     morning: [
-      a('d2-m1', 'Nuovo caso (Insulina o Lisozima)', 'home'),
-      a('d2-m2', 'Controllo qualità e traduzione', 'dna', true),
+      a('d2-m1', 'Nuovo caso dal catalogo', 'home'),
+      a('d2-m2', 'Proteina 3D: ruota e osserva', 'protein', true),
     ],
     afternoon: [
-      a('d2-p1', 'Esercizio lampo: conta gli amminoacidi', 'dna', true),
-      a('d2-p2', 'Project work: cosa codifica il gene', 'dna', true),
+      a('d2-p1', 'Leggi la scheda della proteina', 'protein', true),
+      a('d2-p2', 'Project work: forma e funzione', 'protein', true),
     ],
-    output: a('d2-out', 'Output: una lettura completa nel dossier · badge Lettore di DNA', 'dossier', true),
+    output: a('d2-out', 'Output: proteina 3D nel dossier · badge Esploratore 3D', 'dossier', true),
   },
   {
     n: 3,
@@ -77,31 +77,31 @@ export const DAYS: CourseDay[] = [
   },
   {
     n: 4,
-    title: 'Il potere di una mutazione',
-    focus: 'Laboratorio mutazioni',
+    title: 'Leggere il DNA',
+    focus: 'Modulo · Leggere il DNA',
     morning: [
-      a('d4-m1', 'Laboratorio mutazioni: sostituzioni', 'mutazioni'),
-      a('d4-m2', 'Inserzioni e delezioni: il frameshift', 'mutazioni'),
+      a('d4-m1', 'Leggi il DNA del caso: controllo qualità', 'dna', true),
+      a('d4-m2', 'Traduzione: dal DNA alla proteina', 'dna', true),
     ],
     afternoon: [
-      a('d4-p1', 'Sfide a squadre', 'quiz'),
-      a('d4-p2', 'Quiz «Le mutazioni»', 'quiz'),
+      a('d4-p1', 'Esercizio lampo: conta gli amminoacidi', 'dna', true),
+      a('d4-p2', 'Project work: cosa codifica il gene', 'dna', true),
     ],
-    output: a('d4-out', 'Output: mutazione spiegata nel dossier · badge Detective del gene', 'dossier', true),
+    output: a('d4-out', 'Output: una lettura completa nel dossier · badge Lettore di DNA', 'dossier', true),
   },
   {
     n: 5,
-    title: 'La forma che fa la funzione',
-    focus: 'Modulo · Proteina 3D',
+    title: 'Il potere di una mutazione',
+    focus: 'Laboratorio mutazioni',
     morning: [
-      a('d5-m1', 'Proteina 3D: ruota e osserva', 'protein', true),
-      a('d5-m2', 'Leggi la scheda della proteina', 'protein', true),
+      a('d5-m1', 'Laboratorio mutazioni: sostituzioni', 'mutazioni'),
+      a('d5-m2', 'Inserzioni e delezioni: il frameshift', 'mutazioni'),
     ],
     afternoon: [
-      a('d5-p1', 'Project work: forma e funzione', 'protein', true),
-      a('d5-p2', 'Aggiorna il dossier', 'dossier', true),
+      a('d5-p1', 'Sfide a squadre', 'quiz'),
+      a('d5-p2', 'Quiz «Le mutazioni»', 'quiz'),
     ],
-    output: a('d5-out', 'Output: proteina 3D nel dossier · badge Esploratore 3D', 'dossier', true),
+    output: a('d5-out', 'Output: mutazione spiegata nel dossier · badge Detective del gene', 'dossier', true),
   },
   {
     n: 6,
@@ -109,7 +109,7 @@ export const DAYS: CourseDay[] = [
     focus: 'Casi · Malattie genetiche',
     morning: [
       a('d6-m1', 'Scegli un caso (Fibrosi cistica o Huntington)', 'home'),
-      a('d6-m2', 'I tre gesti in fila: leggi → confronta → 3D', 'dna', true),
+      a('d6-m2', 'I tre gesti in fila: osserva 3D → confronta → leggi', 'protein', true),
     ],
     afternoon: [
       a('d6-p1', 'Costruisci il dossier del caso', 'dossier', true),
@@ -123,7 +123,7 @@ export const DAYS: CourseDay[] = [
     focus: 'Casi · Evoluzione, enzimi, celebri',
     morning: [
       a('d7-m1', 'Secondo caso completo (Spike, GFP o Amilasi)', 'home'),
-      a('d7-m2', 'Ripeti i tre gesti', 'compare', true),
+      a('d7-m2', 'Ripeti i tre gesti (dalla proteina 3D)', 'protein', true),
     ],
     afternoon: [
       a('d7-p1', 'Conclusione del dossier con il tutor', 'dossier', true),
@@ -140,7 +140,7 @@ export const DAYS: CourseDay[] = [
       a('d8-m2', 'Formula la domanda e verifica', 'libera'),
     ],
     afternoon: [
-      a('d8-p1', 'Leggi (ed eventualmente confronta) la vostra proteina', 'dna', true),
+      a('d8-p1', 'Osserva la proteina del progetto in 3D', 'protein', true),
       a('d8-p2', 'Imposta il dossier di progetto', 'dossier', true),
     ],
     output: a('d8-out', 'Output: progetto impostato (domanda + primi dati)', 'dossier', true),

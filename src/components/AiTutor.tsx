@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import type { ChatMessage } from '../types';
+import type { ChatAttachment, ChatMessage } from '../types';
 import { AiNotConfiguredError, askAi, isAiConfigured } from '../lib/ai';
 
 interface AiTutorProps {
@@ -16,9 +16,14 @@ interface AiTutorProps {
   intro?: string;
 }
 
+/** Estensioni/tipi accettati come allegato. */
+const ACCEPT = 'image/*,.txt,.csv,.tsv,.md,.json,.fasta,.fa,.fna,.seq,.pdb';
+const MAX_ATTACHMENTS = 4;
+
 /**
  * Pannello di dialogo con l'AI-interprete. Accompagna ogni modulo: spiega,
- * confronta a parole, guida le ipotesi. Riceve il contesto già calcolato.
+ * confronta a parole, guida le ipotesi. Riceve il contesto già calcolato e può
+ * ricevere ALLEGATI (immagini che il modello multimodale vede, file di testo).
  */
 export function AiTutor({
   title = 'Chiedi al tutor',
@@ -30,6 +35,7 @@ export function AiTutor({
     intro ? [{ role: 'assistant', content: intro }] : [],
   );
   const [input, setInput] = useState('');
+  const [pending, setPending] = useState<ChatAttachment[]>([]);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<string | null>(
     isAiConfigured()
@@ -37,6 +43,7 @@ export function AiTutor({
       : 'Tutor AI non ancora collegato: i moduli scientifici funzionano comunque.',
   );
   const listRef = useRef<HTMLDivElement>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
   const abortRef = useRef<AbortController | null>(null);
 
   // Allo smontaggio del componente, annulla la richiesta al tutor in volo.
@@ -44,12 +51,43 @@ export function AiTutor({
     return () => abortRef.current?.abort();
   }, []);
 
+  // Legge i file scelti: immagini → data URL (ridotte a 1024px), testo → contenuto.
+  async function onFiles(list: FileList | null) {
+    if (!list || list.length === 0) return;
+    const files = Array.from(list);
+    const read: ChatAttachment[] = [];
+    for (const f of files) {
+      try {
+        if (f.type.startsWith('image/')) {
+          read.push({ kind: 'image', name: f.name, dataUrl: await downscaleImage(f) });
+        } else {
+          if (f.size > 1_000_000) {
+            setNotice(`"${f.name}" è troppo grande da leggere come testo.`);
+            continue;
+          }
+          read.push({ kind: 'text', name: f.name, text: await f.text() });
+        }
+      } catch {
+        setNotice(`Non riesco a leggere "${f.name}".`);
+      }
+    }
+    setPending((p) => [...p, ...read].slice(0, MAX_ATTACHMENTS));
+    if (fileRef.current) fileRef.current.value = '';
+  }
+
   async function send(text: string) {
     const question = text.trim();
-    if (!question || busy) return;
+    const atts = pending;
+    if ((!question && atts.length === 0) || busy) return;
     setInput('');
+    setPending([]);
     const history = messages;
-    const next: ChatMessage[] = [...history, { role: 'user', content: question }];
+    const userMsg: ChatMessage = {
+      role: 'user',
+      content: question,
+      attachments: atts.length ? atts : undefined,
+    };
+    const next: ChatMessage[] = [...history, userMsg];
     setMessages(next);
     setBusy(true);
     setNotice(null);
@@ -58,9 +96,12 @@ export function AiTutor({
     abortRef.current = controller;
     try {
       const reply = await askAi({
-        prompt: question,
+        prompt:
+          question ||
+          'Dai un’occhiata a cosa ho allegato e aiutami a ragionarci su.',
         context,
         history,
+        attachments: atts,
         signal: controller.signal,
       });
       setMessages([...next, { role: 'assistant', content: reply }]);
@@ -102,27 +143,43 @@ export function AiTutor({
       >
         {messages.length === 0 && (
           <p className="text-[#c9bfb4] text-sm italic">
-            Scrivi una domanda o scegli un suggerimento qui sotto.
+            Scrivi una domanda, allega un file 📎, o scegli un suggerimento qui sotto.
           </p>
         )}
         {messages.map((m, i) => (
-          <div
-            key={i}
-            className={
-              m.role === 'user'
-                ? 'text-right'
-                : 'text-left'
-            }
-          >
-            <div
-              className={
-                m.role === 'user'
-                  ? 'inline-block bg-[#3a342e] rounded-lg px-3 py-2 text-sm text-paper max-w-[85%] text-left'
-                  : 'inline-block text-[#ece4d7] text-sm leading-relaxed max-w-[92%]'
-              }
-            >
-              {m.content}
-            </div>
+          <div key={i} className={m.role === 'user' ? 'text-right' : 'text-left'}>
+            {m.content && (
+              <div
+                className={
+                  m.role === 'user'
+                    ? 'inline-block bg-[#3a342e] rounded-lg px-3 py-2 text-sm text-paper max-w-[85%] text-left'
+                    : 'inline-block text-[#ece4d7] text-sm leading-relaxed max-w-[92%]'
+                }
+              >
+                {m.content}
+              </div>
+            )}
+            {m.attachments && m.attachments.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-1.5 justify-end">
+                {m.attachments.map((a, k) =>
+                  a.kind === 'image' && a.dataUrl ? (
+                    <img
+                      key={k}
+                      src={a.dataUrl}
+                      alt={a.name}
+                      className="h-20 rounded-lg border border-[#4a423a] object-cover"
+                    />
+                  ) : (
+                    <span
+                      key={k}
+                      className="inline-flex items-center gap-1 text-[11px] text-[#c9bfb4] bg-[#2a2620] rounded px-2 py-1"
+                    >
+                      📄 {a.name}
+                    </span>
+                  ),
+                )}
+              </div>
+            )}
           </div>
         ))}
         {busy && (
@@ -151,6 +208,36 @@ export function AiTutor({
         </div>
       )}
 
+      {/* Anteprima degli allegati in attesa di invio */}
+      {pending.length > 0 && (
+        <div className="flex flex-wrap gap-2 mt-3">
+          {pending.map((a, i) => (
+            <div
+              key={i}
+              className="flex items-center gap-2 rounded-lg bg-[#2a2620] border border-[#4a423a] px-2 py-1 text-[12px] text-[#d9cfc3]"
+            >
+              {a.kind === 'image' && a.dataUrl ? (
+                <img
+                  src={a.dataUrl}
+                  alt={a.name}
+                  className="h-8 w-8 object-cover rounded"
+                />
+              ) : (
+                <span>📄</span>
+              )}
+              <span className="max-w-[140px] truncate">{a.name}</span>
+              <button
+                onClick={() => setPending((p) => p.filter((_, j) => j !== i))}
+                className="text-[#8a7f73] hover:text-paper"
+                aria-label={`Togli ${a.name}`}
+              >
+                ✕
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
       <form
         onSubmit={(e) => {
           e.preventDefault();
@@ -159,15 +246,33 @@ export function AiTutor({
         className="mt-3 flex gap-2"
       >
         <input
+          ref={fileRef}
+          type="file"
+          accept={ACCEPT}
+          multiple
+          onChange={(e) => onFiles(e.target.files)}
+          className="hidden"
+        />
+        <button
+          type="button"
+          onClick={() => fileRef.current?.click()}
+          disabled={busy || pending.length >= MAX_ATTACHMENTS}
+          title="Allega un'immagine o un file"
+          aria-label="Allega un file"
+          className="rounded-lg bg-[#2a2620] border border-[#4a423a] px-3 py-2 text-[#d9cfc3] hover:bg-[#332e27] disabled:opacity-40 transition"
+        >
+          📎
+        </button>
+        <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
           aria-label="Domanda al tutor"
-          placeholder="Fai una domanda al tutor…"
+          placeholder="Fai una domanda o allega un file…"
           className="flex-1 rounded-lg bg-[#2a2620] border border-[#4a423a] px-3 py-2 text-sm text-paper placeholder:text-[#8a7f73] focus:outline-none focus:border-[#e8935f]"
         />
         <button
           type="submit"
-          disabled={busy || !input.trim()}
+          disabled={busy || (!input.trim() && pending.length === 0)}
           className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white disabled:opacity-40 transition"
         >
           Invia
@@ -175,4 +280,38 @@ export function AiTutor({
       </form>
     </div>
   );
+}
+
+/** Riduce un'immagine a max 1024px di lato e la restituisce come data URL JPEG. */
+async function downscaleImage(file: File): Promise<string> {
+  const original = await new Promise<string>((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => res(r.result as string);
+    r.onerror = () => rej(new Error('read'));
+    r.readAsDataURL(file);
+  });
+  try {
+    const img = await new Promise<HTMLImageElement>((res, rej) => {
+      const im = new Image();
+      im.onload = () => res(im);
+      im.onerror = () => rej(new Error('img'));
+      im.src = original;
+    });
+    const MAX = 1024;
+    let { width, height } = img;
+    if (width > MAX || height > MAX) {
+      const s = MAX / Math.max(width, height);
+      width = Math.round(width * s);
+      height = Math.round(height * s);
+    }
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return original;
+    ctx.drawImage(img, 0, 0, width, height);
+    return canvas.toDataURL('image/jpeg', 0.85);
+  } catch {
+    return original; // se qualcosa va storto, mando l'originale
+  }
 }

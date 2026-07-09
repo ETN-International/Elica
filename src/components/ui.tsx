@@ -28,10 +28,11 @@ export function Stepper({
       .filter((e) => !dossier.caseId || e.caseId === dossier.caseId)
       .map((e) => e.kind),
   );
+  // Ordine per la mobilità: dal concreto (3D) al simbolico (DNA).
   const steps: StepDef[] = [
-    { id: 'dna', n: '1', label: 'Leggi', done: kinds.has('dna') },
+    { id: 'protein', n: '1', label: 'Osserva 3D', done: kinds.has('proteina') },
     { id: 'compare', n: '2', label: 'Confronta', done: kinds.has('confronto') },
-    { id: 'protein', n: '3', label: 'Osserva 3D', done: kinds.has('proteina') },
+    { id: 'dna', n: '3', label: 'Leggi DNA', done: kinds.has('dna') },
     { id: 'dossier', n: '4', label: 'Dossier', done: kinds.has('conclusione') },
   ];
 

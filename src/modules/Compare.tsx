@@ -15,6 +15,7 @@ import {
 } from '../components/ui';
 import { AiTutor } from '../components/AiTutor';
 import { alignSequences, describeDifferences, MAX_SEQ_LENGTH } from '../lib/alignment';
+import { SCREEN_BRIEFINGS } from '../data/tutorBriefings';
 
 const ROW = 45; // basi per riga nella visualizzazione allineata
 
@@ -99,6 +100,7 @@ export function Compare({ onNavigate }: { onNavigate: (p: PageId) => void }) {
   }
 
   const aiContext = [
+    SCREEN_BRIEFINGS.compare,
     `Caso: ${currentCase.title}`,
     `Domanda biologica: ${currentCase.question}`,
     `Confronto tra: "${result.aLabel}" e "${result.bLabel}"`,
@@ -335,10 +337,10 @@ export function Compare({ onNavigate }: { onNavigate: (p: PageId) => void }) {
           }
         />
         <button
-          onClick={() => onNavigate('protein')}
+          onClick={() => onNavigate('dna')}
           className="text-sm font-mono text-accent hover:underline"
         >
-          Vedi la proteina in 3D <span className="nudge">→</span>
+          Leggi il DNA <span className="nudge">→</span>
         </button>
       </div>
 

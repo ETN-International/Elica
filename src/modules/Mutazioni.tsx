@@ -17,6 +17,7 @@ import {
   CATEGORY_STYLE,
   type MutationOp,
 } from '../lib/mutation';
+import { SCREEN_BRIEFINGS } from '../data/tutorBriefings';
 
 const SAMPLE = 'ATGGTGCACCTGACTCCTGAGGAGAAGTCTGCCGTTACT';
 
@@ -265,6 +266,7 @@ export function Mutazioni({ onNavigate }: { onNavigate: (p: PageId) => void }) {
         <AiTutor
           title="Il tutor spiega la mutazione"
           context={[
+            SCREEN_BRIEFINGS.mutazioni,
             `Sequenza di partenza: ${available[sourceIdx].label}`,
             `Tipo di mutazione ottenuta: ${style.label}`,
             `Proteina originale: ${effect.originalProtein}`,

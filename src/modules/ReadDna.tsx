@@ -21,6 +21,7 @@ import {
   translate,
   translateCodon,
 } from '../lib/dna';
+import { SCREEN_BRIEFINGS } from '../data/tutorBriefings';
 
 export function ReadDna({ onNavigate }: { onNavigate: (p: PageId) => void }) {
   const { currentCase, addEntry } = useStore();
@@ -60,6 +61,7 @@ export function ReadDna({ onNavigate }: { onNavigate: (p: PageId) => void }) {
   const allGood = quality.every((q) => q.ok);
 
   const aiContext = [
+    SCREEN_BRIEFINGS.dna,
     `Caso: ${currentCase.title}`,
     `Domanda biologica: ${currentCase.question}`,
     `Sequenza scelta: ${seq.label}`,
@@ -228,10 +230,10 @@ export function ReadDna({ onNavigate }: { onNavigate: (p: PageId) => void }) {
           }
         />
         <button
-          onClick={() => onNavigate('compare')}
+          onClick={() => onNavigate('dossier')}
           className="text-sm font-mono text-accent hover:underline"
         >
-          Vai al confronto <span className="nudge">→</span>
+          Vai al dossier <span className="nudge">→</span>
         </button>
       </div>
 
