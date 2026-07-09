@@ -5,20 +5,19 @@
 // sistema come SECRET del server, MAI nel browser. Il browser chiama questa
 // function; la function inoltra al cervello:
 //
-//   • AXON BRAIN (DGX Spark) — endpoint OpenAI-compatibile, esposto in HTTPS
-//     tramite Tailscale Funnel su un percorso segreto, protetto da SPARK_KEY.
-//     Preferito (costo 0). Config: SPARK_URL, SPARK_KEY, SPARK_MODEL.
+//   • AXON BRAIN (DGX Spark) — endpoint OpenAI-compatibile, raggiunto in PRIVATO
+//     via Tailscale (lo Spark NON è mai esposto su internet). Preferito (costo 0).
+//     Config: SPARK_URL (es. http://100.72.206.121:8088/v1), SPARK_MODEL.
+//     SPARK_KEY è opzionale: serve solo se un giorno lo Spark richiedesse un token.
 //   • ANTHROPIC (fallback) — se SPARK_URL non è impostato ma c'è ANTHROPIC_API_KEY.
 //
-// Deploy (Supabase CLI):
-//   supabase functions deploy ai-proxy --no-verify-jwt
-//   # cervello = Axon Brain sullo Spark (consigliato):
-//   supabase secrets set SPARK_URL="https://spark-402c-1.tail9aec7d.ts.net/axon/v1"
-//   supabase secrets set SPARK_KEY="<il-token-della-guardia>"
-//   # opzionale: supabase secrets set SPARK_MODEL="unsloth/Qwen3.5-122B-A10B-GGUF:UD-Q4_K_XL"
-//   # hardening (consigliato): allowlist del dominio Netlify + rate limit
-//   supabase secrets set ALLOWED_ORIGINS="https://<tuo-sito>.netlify.app"
-//   supabase secrets set RATE_LIMIT_PER_MIN=30
+// Deploy su Supabase SELF-HOSTED (Coolify): copiare questo file in
+//   volumes/functions/ai-proxy/index.ts  e riavviare il servizio `functions`.
+// Env del container functions (via Coolify):
+//   SPARK_URL=http://100.72.206.121:8088/v1
+//   SPARK_MODEL=unsloth/Qwen3.5-122B-A10B-GGUF:UD-Q4_K_XL
+//   ALLOWED_ORIGINS=https://<dominio-frontend>
+//   RATE_LIMIT_PER_MIN=30
 //
 // Runtime: Deno (Supabase Edge Functions).
 // ─────────────────────────────────────────────────────────────────────────
@@ -142,12 +141,13 @@ async function callSpark(
     { role: 'user', content: userContent },
   ];
 
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  // In privato (Spark raggiunto via Tailscale) SPARK_KEY è vuoto: niente header.
+  if (SPARK_KEY) headers['Authorization'] = `Bearer ${SPARK_KEY}`;
+
   const res = await fetch(`${SPARK_URL}/chat/completions`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${SPARK_KEY}`,
-    },
+    headers,
     body: JSON.stringify({
       model: SPARK_MODEL,
       messages,
