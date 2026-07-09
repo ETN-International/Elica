@@ -1,0 +1,18 @@
+[Unit]
+Description=Axon Brain guard (auth + reverse proxy verso llama.cpp :8088)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+# Sostituisci <SPARK_KEY> con il token generato (lo stesso che metti in Supabase).
+Environment=SPARK_KEY=<SPARK_KEY>
+Environment=UPSTREAM=http://127.0.0.1:8088
+Environment=PREFIX=/axon
+Environment=PORT=8091
+ExecStart=/usr/bin/python3 /home/axonforce/axon-guard/guard.py
+Restart=always
+RestartSec=3
+User=axonforce
+
+[Install]
+WantedBy=multi-user.target

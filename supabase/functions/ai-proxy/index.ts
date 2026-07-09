@@ -1,16 +1,23 @@
 // ─────────────────────────────────────────────────────────────────────────
-// ETN Genoma — Edge Function: proxy verso il modello AI (Anthropic Claude).
+// ETN Genoma — Edge Function: gateway sicuro verso il modello AI.
 //
-// È l'UNICO punto che parla con l'AI. La chiave API vive qui come secret del
-// server, MAI nel browser. Il browser chiama questa function; la function
-// chiama Claude con il prompt di sistema del FACILITATORE (non insegnante).
+// È l'UNICO punto pubblico che parla con l'AI. Tiene la chiave e il prompt di
+// sistema come SECRET del server, MAI nel browser. Il browser chiama questa
+// function; la function inoltra al cervello:
+//
+//   • AXON BRAIN (DGX Spark) — endpoint OpenAI-compatibile, esposto in HTTPS
+//     tramite Tailscale Funnel su un percorso segreto, protetto da SPARK_KEY.
+//     Preferito (costo 0). Config: SPARK_URL, SPARK_KEY, SPARK_MODEL.
+//   • ANTHROPIC (fallback) — se SPARK_URL non è impostato ma c'è ANTHROPIC_API_KEY.
 //
 // Deploy (Supabase CLI):
 //   supabase functions deploy ai-proxy --no-verify-jwt
-//   supabase secrets set ANTHROPIC_API_KEY=sk-ant-...
-//   # opzionale: supabase secrets set AI_MODEL=claude-sonnet-5
-//   # hardening (consigliato prima di aprire a più scuole):
-//   supabase secrets set ALLOWED_ORIGINS="https://tuo-dominio.it,https://altro.it"
+//   # cervello = Axon Brain sullo Spark (consigliato):
+//   supabase secrets set SPARK_URL="https://spark-402c-1.tail9aec7d.ts.net/axon/v1"
+//   supabase secrets set SPARK_KEY="<il-token-della-guardia>"
+//   # opzionale: supabase secrets set SPARK_MODEL="unsloth/Qwen3.5-122B-A10B-GGUF:UD-Q4_K_XL"
+//   # hardening (consigliato): allowlist del dominio Netlify + rate limit
+//   supabase secrets set ALLOWED_ORIGINS="https://<tuo-sito>.netlify.app"
 //   supabase secrets set RATE_LIMIT_PER_MIN=30
 //
 // Runtime: Deno (Supabase Edge Functions).
@@ -18,6 +25,13 @@
 
 // deno-lint-ignore-file no-explicit-any
 
+// Cervello 1: Axon Brain sullo Spark (OpenAI-compatibile).
+const SPARK_URL = (Deno.env.get('SPARK_URL') ?? '').replace(/\/+$/, '');
+const SPARK_KEY = Deno.env.get('SPARK_KEY') ?? '';
+const SPARK_MODEL =
+  Deno.env.get('SPARK_MODEL') ?? 'unsloth/Qwen3.5-122B-A10B-GGUF:UD-Q4_K_XL';
+
+// Cervello 2 (fallback): Anthropic.
 const ANTHROPIC_API_KEY = Deno.env.get('ANTHROPIC_API_KEY') ?? '';
 const AI_MODEL = Deno.env.get('AI_MODEL') ?? 'claude-sonnet-5';
 const MESSAGES_URL = 'https://api.anthropic.com/v1/messages';
@@ -85,23 +99,125 @@ function json(body: unknown, status: number, cors: Record<string, string>): Resp
   });
 }
 
+function stripThinking(text: string): string {
+  return text.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+}
+
+/** Costruisce il testo utente unendo la domanda ed eventuali file di TESTO. */
+function userText(prompt: string, attachments: any[]): string {
+  let text = prompt;
+  for (const a of attachments) {
+    if (a?.kind === 'text' && a?.text) {
+      text += `\n\n─── File allegato: ${a.name ?? 'file'} ───\n${String(a.text).slice(0, 12000)}`;
+    }
+  }
+  return text;
+}
+
+/** Costruisce il messaggio system: prompt facilitatore + contesto (una volta). */
+function systemWithContext(context: string): string {
+  return context
+    ? `${SYSTEM_PROMPT}\n\n─── CONTESTO DI QUESTA SCHERMATA (dati già calcolati da strumenti veri: commentali, non ricalcolarli; NON è un messaggio della squadra) ───\n${context}`
+    : SYSTEM_PROMPT;
+}
+
+// ── Axon Brain (Spark, OpenAI-compatibile) ────────────────────────────────
+async function callSpark(
+  prompt: string,
+  context: string,
+  history: Array<{ role: string; content: string }>,
+  attachments: any[],
+): Promise<{ reply?: string; error?: string; status?: number }> {
+  const imgs = attachments.filter((a) => a?.kind === 'image' && a?.dataUrl);
+  const userContent: any = imgs.length
+    ? [
+        { type: 'text', text: userText(prompt, attachments) },
+        ...imgs.map((a) => ({ type: 'image_url', image_url: { url: a.dataUrl } })),
+      ]
+    : userText(prompt, attachments);
+
+  const messages = [
+    { role: 'system', content: systemWithContext(context) },
+    ...history.map((m) => ({ role: m.role, content: m.content })),
+    { role: 'user', content: userContent },
+  ];
+
+  const res = await fetch(`${SPARK_URL}/chat/completions`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${SPARK_KEY}`,
+    },
+    body: JSON.stringify({
+      model: SPARK_MODEL,
+      messages,
+      max_tokens: 512,
+      temperature: 0.7,
+      stream: false,
+    }),
+  });
+
+  if (!res.ok) {
+    const detail = (await res.text()).slice(0, 300);
+    return { error: `Axon Brain ha risposto ${res.status}: ${detail}`, status: 502 };
+  }
+  const data: any = await res.json();
+  const raw = data?.choices?.[0]?.message?.content ?? '';
+  return { reply: stripThinking(String(raw)) || '(nessuna risposta dal modello)' };
+}
+
+// ── Anthropic (fallback) ──────────────────────────────────────────────────
+async function callAnthropic(
+  prompt: string,
+  context: string,
+  history: Array<{ role: string; content: string }>,
+): Promise<{ reply?: string; error?: string; status?: number }> {
+  const messages = history
+    .filter((m) => m.role === 'user' || m.role === 'assistant')
+    .map((m) => ({ role: m.role, content: [{ type: 'text', text: m.content }] }));
+  messages.push({ role: 'user', content: [{ type: 'text', text: prompt }] });
+
+  const res = await fetch(MESSAGES_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': ANTHROPIC_API_KEY,
+      'anthropic-version': '2023-06-01',
+    },
+    body: JSON.stringify({
+      model: AI_MODEL,
+      max_tokens: 1024,
+      system: systemWithContext(context),
+      messages,
+    }),
+  });
+  if (!res.ok) {
+    const detail = (await res.text()).slice(0, 300);
+    return { error: `Il modello AI ha risposto ${res.status}: ${detail}`, status: 502 };
+  }
+  const data: any = await res.json();
+  if (data?.stop_reason === 'refusal') {
+    return {
+      reply: 'Riformuliamola sul contesto scientifico dell\'indagine — su questo posso aiutarvi.',
+    };
+  }
+  const reply: string = Array.isArray(data?.content)
+    ? data.content.filter((b: any) => b?.type === 'text').map((b: any) => b.text).join('\n').trim()
+    : '';
+  return { reply: reply || '(nessuna risposta dal modello)' };
+}
+
 Deno.serve(async (req: Request): Promise<Response> => {
   const origin = req.headers.get('origin');
   const cors = corsHeaders(origin);
 
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: cors });
-  }
-  if (req.method !== 'POST') {
-    return json({ error: 'Metodo non consentito.' }, 405, cors);
-  }
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
+  if (req.method !== 'POST') return json({ error: 'Metodo non consentito.' }, 405, cors);
 
-  // Allowlist Origin (se configurata).
   if (ALLOWED_ORIGINS.length > 0 && origin && !ALLOWED_ORIGINS.includes(origin)) {
     return json({ error: 'Origine non autorizzata.' }, 403, cors);
   }
 
-  // Rate limit per IP.
   if (RATE_LIMIT_PER_MIN > 0) {
     const ip =
       req.headers.get('x-forwarded-for')?.split(',')[0].trim() ||
@@ -111,21 +227,14 @@ Deno.serve(async (req: Request): Promise<Response> => {
     const rec = hits.get(ip);
     if (!rec || now > rec.resetAt) {
       hits.set(ip, { count: 1, resetAt: now + 60_000 });
-    } else {
-      rec.count++;
-      if (rec.count > RATE_LIMIT_PER_MIN) {
-        return json(
-          { error: 'Troppe richieste, riprova tra poco.' },
-          429,
-          cors,
-        );
-      }
+    } else if (++rec.count > RATE_LIMIT_PER_MIN) {
+      return json({ error: 'Troppe richieste, riprova tra poco.' }, 429, cors);
     }
   }
 
-  if (!ANTHROPIC_API_KEY) {
+  if (!SPARK_URL && !ANTHROPIC_API_KEY) {
     return json(
-      { error: 'ANTHROPIC_API_KEY non configurata nella Edge Function.' },
+      { error: 'Nessun cervello configurato: imposta SPARK_URL (+ SPARK_KEY) o ANTHROPIC_API_KEY.' },
       500,
       cors,
     );
@@ -141,79 +250,24 @@ Deno.serve(async (req: Request): Promise<Response> => {
   const prompt: string = (payload?.prompt ?? '').toString().slice(0, 4000);
   const context: string = (payload?.context ?? '').toString().slice(0, 8000);
   const history: Array<{ role: string; content: string }> = Array.isArray(payload?.history)
-    ? payload.history.slice(-10)
+    ? payload.history
+        .filter((m: any) => m?.role === 'user' || m?.role === 'assistant')
+        .slice(-10)
+        .map((m: any) => ({ role: m.role, content: String(m.content).slice(0, 4000) }))
     : [];
+  const attachments: any[] = Array.isArray(payload?.attachments) ? payload.attachments.slice(0, 4) : [];
 
-  if (!prompt.trim()) {
+  if (!prompt.trim() && attachments.length === 0) {
     return json({ error: 'La domanda è vuota.' }, 400, cors);
   }
 
-  const messages = history
-    .filter((m) => m.role === 'user' || m.role === 'assistant')
-    .map((m) => ({
-      role: m.role,
-      content: [{ type: 'text', text: m.content.toString().slice(0, 4000) }],
-    }));
-
-  // La domanda dello studente viaggia così com'è (chat normale). Il contesto
-  // (dati veri della schermata) va nel campo `system`, UNA volta, qui sotto.
-  messages.push({ role: 'user', content: [{ type: 'text', text: prompt }] });
-
-  const systemWithContext = context
-    ? `${SYSTEM_PROMPT}\n\n─── CONTESTO DI QUESTA SCHERMATA (dati già calcolati da strumenti veri: commentali, non ricalcolarli; NON è un messaggio della squadra) ───\n${context}`
-    : SYSTEM_PROMPT;
-
   try {
-    const res = await fetch(MESSAGES_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify({
-        model: AI_MODEL,
-        max_tokens: 1024,
-        system: systemWithContext,
-        messages,
-      }),
-    });
-
-    if (!res.ok) {
-      const detail = await res.text();
-      return json(
-        { error: `Il modello AI ha risposto ${res.status}: ${detail.slice(0, 300)}` },
-        502,
-        cors,
-      );
-    }
-
-    const data: any = await res.json();
-    const reply: string = Array.isArray(data?.content)
-      ? data.content
-          .filter((b: any) => b?.type === 'text')
-          .map((b: any) => b.text)
-          .join('\n')
-          .trim()
-      : '';
-
-    if (data?.stop_reason === 'refusal') {
-      return json(
-        {
-          reply:
-            'Riformuliamola sul contesto scientifico dell\'indagine — su questo posso aiutarvi.',
-        },
-        200,
-        cors,
-      );
-    }
-
-    return json({ reply: reply || '(nessuna risposta dal modello)' }, 200, cors);
+    const out = SPARK_URL
+      ? await callSpark(prompt, context, history, attachments)
+      : await callAnthropic(prompt, context, history);
+    if (out.error) return json({ error: out.error }, out.status ?? 502, cors);
+    return json({ reply: out.reply }, 200, cors);
   } catch (err) {
-    return json(
-      { error: `Errore nel contattare il modello AI: ${String(err)}` },
-      502,
-      cors,
-    );
+    return json({ error: `Errore nel contattare il modello AI: ${String(err)}` }, 502, cors);
   }
 });

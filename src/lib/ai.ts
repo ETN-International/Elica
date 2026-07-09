@@ -221,26 +221,18 @@ async function askProxy(opts: AskAiOptions): Promise<string> {
     headers['apikey'] = ANON_KEY;
   }
 
-  // Via proxy Anthropic i file di testo li inseriamo nel prompt; le immagini
-  // richiederebbero il formato a blocchi di Anthropic (non gestito qui).
-  const texts = (opts.attachments ?? []).filter((a) => a.kind === 'text' && a.text);
-  const hasImages = (opts.attachments ?? []).some((a) => a.kind === 'image');
-  let prompt = opts.prompt;
-  for (const t of texts) {
-    prompt += `\n\n─── File allegato: ${t.name} ───\n${(t.text ?? '').slice(0, 12000)}`;
-  }
-  if (hasImages) {
-    prompt += '\n\n(La squadra ha allegato un\'immagine, ma questo tutor di riserva non può vederla.)';
-  }
-
+  // La Edge Function fa da gateway: gli allegati (immagini + testo) li inoltra
+  // al cervello (Axon Brain vede le immagini; con Anthropic i testi finiscono
+  // nel prompt e le immagini vengono ignorate lato server).
   const res = await fetch(PROXY_URL as string, {
     method: 'POST',
     headers,
     signal: opts.signal,
     body: JSON.stringify({
-      prompt,
+      prompt: opts.prompt,
       context: opts.context ?? '',
       history: opts.history ?? [],
+      attachments: opts.attachments ?? [],
     }),
   });
 
