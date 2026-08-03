@@ -32,7 +32,7 @@ export const CASES: Case[] = [
     ],
     protein: { uniprot: 'P68871', name: 'Emoglobina, subunità beta (HBB)' },
     provenance:
-      "Estratti reali dell'inizio del gene HBB umano, con la mutazione puntiforme del codone 6. Struttura 3D reale (UniProt P68871).",
+      "Estratti reali dell'inizio del gene HBB umano con la mutazione dell'anemia falciforme (HBB:c.20A>T). Sulla numerazione: la letteratura classica la chiama «Glu6Val» contando gli amminoacidi della proteina matura, senza la metionina iniziale; l'app conta anche quella e mostra quindi il codone 7. Stessa mutazione, due modi di contare. Struttura 3D reale (UniProt P68871).",
   },
   {
     id: 'fibrosi-cistica',
@@ -44,12 +44,12 @@ export const CASES: Case[] = [
     theme: 'Malattie genetiche',
     difficulty: 2,
     sequences: [
-      { label: 'CFTR sano', dna: 'ATGACTGGATTCAAGGATCCTTTCGGTGAACTG' },
-      { label: 'CFTR con delezione (ΔF508)', dna: 'ATGACTGGATTCAAGGATCCTGGTGAACTG' },
+      { label: 'CFTR — tratto didattico', dna: 'ATGACTGGATTCAAGGATCCTTTCGGTGAACTG' },
+      { label: 'CFTR — con delezione di un codone', dna: 'ATGACTGGATTCAAGGATCCTGGTGAACTG' },
     ],
     protein: { uniprot: 'P13569', name: 'Canale CFTR umano' },
     provenance:
-      'Estratti didattici: la seconda sequenza ha la delezione in-frame di un codone (tipo ΔF508). Struttura 3D reale (UniProt P13569).',
+      "Sequenze costruite a scopo didattico (non sono il tratto reale di CFTR): servono a mostrare come appare la delezione in-frame di un intero codone, come la ΔF508 che nella proteina vera rimuove la fenilalanina in posizione 508. Struttura 3D reale (UniProt P13569).",
   },
   {
     id: 'huntington',
@@ -72,15 +72,15 @@ export const CASES: Case[] = [
     ],
     protein: { uniprot: 'P42858', name: 'Huntingtina umana (HTT)' },
     provenance:
-      "Estratti didattici. I numeri seguono la soglia reale: fino a ~26 ripetizioni CAG l'allele è sano, la malattia compare da ~36-40. Struttura 3D reale (UniProt P42858).",
+      "Estratti didattici. I numeri seguono la soglia reale: fino a ~26 ripetizioni CAG l'allele è sano, la malattia compare da ~36-40. Nota: AlphaFold DB non ha un modello per l'huntingtina (3142 amminoacidi, oltre il limite della banca dati) — un promemoria che nemmeno le banche dati migliori coprono tutto.",
   },
 
   // ── Evoluzione e specie ──────────────────────────────────────────────
   {
     id: 'insulina-uomo-topo',
-    title: 'Insulina: quanto siamo simili al topo?',
+    title: 'Insulina: quanto siamo simili al ratto?',
     question:
-      "Il gene dell'insulina di uomo e topo si somiglia? Cosa ci dice sull'evoluzione?",
+      "Il gene dell'insulina di uomo e ratto si somiglia? Cosa ci dice sull'evoluzione?",
     intro:
       "L'insulina regola lo zucchero nel sangue ed è un gene antico, condiviso da molti animali. Allinea i due geni e misura quanto combaciano: le differenze raccontano quanto sono lontani i due parenti.",
     theme: 'Evoluzione e specie',
@@ -91,13 +91,15 @@ export const CASES: Case[] = [
         dna: 'ATGGCCCTGTGGATGCGCCTCCTGCCCCTGCTGGCGCTGCTGGCCCTCTGGGGACCTGACCCAGCCGCAGCCTTTGTG',
       },
       {
-        label: 'Insulina — Topo (Ins2)',
+        // Verificata: questa sequenza traduce esattamente l'inizio di P01322,
+        // cioè l'insulina 1 del RATTO (non del topo).
+        label: 'Insulina — Ratto (Ins1)',
         dna: 'ATGGCCCTGTGGATGCGCTTCCTGCCCCTGCTGGCCCTGCTTGTCCTCTGGGAGCCCAAACCCGCCCAGGCTTTTGTC',
       },
     ],
     protein: { uniprot: 'P01308', name: 'Insulina umana (INS)' },
     provenance:
-      "Estratti didattici della regione iniziale del gene dell'insulina. Struttura 3D reale (UniProt P01308).",
+      "Inizio reale del gene dell'insulina umana (P01308) confrontato con quello del ratto (Ins1, P01322). Struttura 3D reale (UniProt P01308).",
   },
   {
     id: 'mutazione-silente',
@@ -150,12 +152,12 @@ export const CASES: Case[] = [
     theme: 'Enzimi e difese',
     difficulty: 1,
     sequences: [
-      { label: 'Amilasi — variante 1', dna: 'ATGAAGTTCTTCCTGCTGCTGTTCACCATCGGCTTCTGCTGGGCC' },
-      { label: 'Amilasi — variante 2', dna: 'ATGAAGTCCTTCCTGCTGCTGTTCACCATCGGCTTCTGCTGGGCC' },
+      { label: 'Amilasi AMY1A (reale)', dna: 'ATGAAGCTGTTCTGGCTGCTGTTCACCATCGGCTTCTGCTGGGCC' },
+      { label: 'Amilasi — variante didattica', dna: 'ATGAAGCTGTCCTGGCTGCTGTTCACCATCGGCTTCTGCTGGGCC' },
     ],
-    protein: { uniprot: 'P04745', name: 'Amilasi salivare umana (AMY1)' },
+    protein: { uniprot: 'P0DUB6', name: 'Amilasi salivare umana (AMY1A)' },
     provenance:
-      'Estratti didattici con una sostituzione puntiforme. Struttura 3D reale (UniProt P04745).',
+      "La prima sequenza è l'inizio reale del gene AMY1A umano (UniProt P0DUB6); la seconda è una variante costruita a scopo didattico con una sola sostituzione. Struttura 3D reale da AlphaFold DB.",
   },
 
   // ── Proteine celebri ─────────────────────────────────────────────────
@@ -184,12 +186,14 @@ export const CASES: Case[] = [
     theme: 'Proteine celebri',
     difficulty: 3,
     sequences: [
-      { label: 'Spike — riferimento', dna: 'ATGTTTGTTGATCTTGTTTTATTGCCAGATGTCTCTAGTCAGTGTGTT' },
-      { label: 'Spike — variante', dna: 'ATGTTTGTTGGTCTTGTTTTATTGCCAGATGTCTCTAGTCAGTGTGTT' },
+      // Inizio reale del gene S di SARS-CoV-2 (Wuhan-Hu-1): MFVFLVLLPLVSSQCV.
+      { label: 'Spike — riferimento (reale)', dna: 'ATGTTTGTTTTTCTTGTTTTATTGCCACTAGTCTCTAGTCAGTGTGTT' },
+      // Variante costruita a scopo didattico: una sola base cambiata (L5F).
+      { label: 'Spike — variante didattica', dna: 'ATGTTTGTTTTTTTTGTTTTATTGCCACTAGTCTCTAGTCAGTGTGTT' },
     ],
     protein: { uniprot: 'P0DTC2', name: 'Proteina Spike (SARS-CoV-2)' },
     provenance:
-      'Estratti didattici con una sostituzione puntiforme. Struttura 3D reale (UniProt P0DTC2).',
+      "La prima sequenza è l'inizio reale del gene S del ceppo di riferimento (Wuhan-Hu-1); la seconda è una variante costruita a scopo didattico con una sola sostituzione — non corrisponde a una variante realmente circolata. Struttura 3D reale (UniProt P0DTC2).",
   },
 ];
 

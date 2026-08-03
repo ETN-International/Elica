@@ -36,10 +36,17 @@ export function Squadra({ onNavigate }: { onNavigate: (p: PageId) => void }) {
       <HowTo
         steps={[
           'Scegliete un nome per la squadra.',
-          'Aggiungete i nomi dei componenti.',
+          'Aggiungete i componenti: bastano il nome o un soprannome.',
           "Quando siete pronti, passate al catalogo e scegliete l'indagine.",
         ]}
       />
+
+      <Note label="Dove finiscono questi nomi">
+        Restano <strong>su questo computer</strong> (nel browser) e compaiono sul
+        dossier che esporterete: non vengono inviati al tutor AI né a nessun
+        server. Se il computer è condiviso, a fine giornata usate «Azzera» nel
+        dossier. Per la giuria vanno benissimo anche solo i nomi di battesimo.
+      </Note>
 
       <Sub>Il nome della squadra</Sub>
       <input

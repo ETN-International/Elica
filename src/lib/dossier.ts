@@ -61,16 +61,25 @@ const KIND_LABEL: Record<DossierEntry['kind'], string> = {
 };
 
 /** Esporta il dossier come pagina HTML autonoma, navigabile e stampabile. */
-export function dossierToHtml(d: Dossier, caseTitle: string): string {
+export function dossierToHtml(
+  d: Dossier,
+  caseTitle: string,
+  /** Da caseId al titolo leggibile dell'indagine, per etichettare ogni voce. */
+  caseLabel: (caseId?: string | null) => string = () => '',
+): string {
   const rows = d.entries
     .map((e) => {
       const dataBlock = e.data
         ? `<pre class="data">${escapeHtml(JSON.stringify(e.data, null, 2))}</pre>`
         : '';
+      const label = caseLabel(e.caseId);
+      const from = label ? ` · ${escapeHtml(label)}` : '';
+      // Difesa: una voce corrotta non deve far fallire l'intero export.
+      const kind = KIND_LABEL[e.kind] ?? 'Voce';
       return `<section class="entry">
-        <div class="kind">${KIND_LABEL[e.kind]}</div>
-        <h2>${escapeHtml(e.title)}</h2>
-        <p>${escapeHtml(e.body).replace(/\n/g, '<br>')}</p>
+        <div class="kind">${kind}${from}</div>
+        <h2>${escapeHtml(e.title ?? '')}</h2>
+        <p>${escapeHtml(e.body ?? '').replace(/\n/g, '<br>')}</p>
         ${dataBlock}
       </section>`;
     })

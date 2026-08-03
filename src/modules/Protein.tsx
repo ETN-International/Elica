@@ -15,13 +15,15 @@ import {
 } from '../components/ui';
 import { AiTutor } from '../components/AiTutor';
 import { MolstarViewer } from '../components/MolstarViewer';
-import { fetchAlphaFoldModel } from '../lib/alphafold';
+import { fetchAlphaFoldModel, NoStructureError } from '../lib/alphafold';
 import { SCREEN_BRIEFINGS } from '../data/tutorBriefings';
 
 export function Protein({ onNavigate }: { onNavigate: (p: PageId) => void }) {
   const { currentCase, addEntry } = useStore();
   const [model, setModel] = useState<AlphaFoldModel | null>(null);
   const [error, setError] = useState<string | null>(null);
+  /** true quando AlphaFold non copre questa proteina (non è un guasto). */
+  const [noStructure, setNoStructure] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const uniprot = currentCase?.protein.uniprot;
@@ -31,6 +33,7 @@ export function Protein({ onNavigate }: { onNavigate: (p: PageId) => void }) {
     let cancelled = false;
     setLoading(true);
     setError(null);
+    setNoStructure(false);
     setModel(null);
     fetchAlphaFoldModel(uniprot)
       .then((m) => {
@@ -41,6 +44,7 @@ export function Protein({ onNavigate }: { onNavigate: (p: PageId) => void }) {
       })
       .catch((e) => {
         if (!cancelled) {
+          setNoStructure(e instanceof NoStructureError);
           setError(String(e instanceof Error ? e.message : e));
           setLoading(false);
         }
@@ -51,7 +55,7 @@ export function Protein({ onNavigate }: { onNavigate: (p: PageId) => void }) {
   }, [uniprot]);
 
   if (!currentCase) {
-    return <NoCaseNotice moduleLabel="Modulo 3" onNavigate={onNavigate} />;
+    return <NoCaseNotice moduleLabel="Modulo 1" onNavigate={onNavigate} />;
   }
 
   const aiContext = model
@@ -73,7 +77,7 @@ export function Protein({ onNavigate }: { onNavigate: (p: PageId) => void }) {
     <div className="fade-up">
       <Stepper current="protein" onNavigate={onNavigate} />
       <PageHeader
-        eyebrow="Modulo 3 · Vedere la proteina in 3D"
+        eyebrow="Modulo 1 · Vedere la proteina in 3D"
         title={
           <>
             La <em className="text-accent not-italic italic">forma</em> che fa la funzione
@@ -97,7 +101,24 @@ export function Protein({ onNavigate }: { onNavigate: (p: PageId) => void }) {
         </div>
       )}
 
-      {error && (
+      {error && noStructure && (
+        <Note label="Questa proteina non è in AlphaFold">
+          {error}
+          <br />
+          <span className="text-ink-muted text-[13px]">
+            Ottima occasione per una domanda: se nemmeno la banca dati più grande
+            del mondo ha tutto, come fanno i ricercatori con le proteine mancanti?{' '}
+            <button
+              onClick={() => onNavigate('compare')}
+              className="text-accent font-medium hover:underline"
+            >
+              Intanto proseguite con il confronto dei geni →
+            </button>
+          </span>
+        </Note>
+      )}
+
+      {error && !noStructure && (
         <Note label="Problema nel recupero" tone="amber">
           {error}
           <br />
@@ -140,7 +161,7 @@ export function Protein({ onNavigate }: { onNavigate: (p: PageId) => void }) {
             <Esercizio
               consegna="Quanti amminoacidi ha questa proteina? (lo trovi nella scheda qui sopra)"
               expected={String(model.sequenceLength)}
-              placeholder={`es. ${model.sequenceLength}`}
+              placeholder="scrivi un numero"
               explanation={`Questa proteina è lunga ${model.sequenceLength} amminoacidi: è la catena che, ripiegandosi, forma la struttura 3D che vedi.`}
             />
           )}

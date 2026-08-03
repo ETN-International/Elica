@@ -19,16 +19,28 @@ export function Sidebar({
   open: boolean;
   onClose: () => void;
 }) {
-  const { currentCase, progress, toggleUnit } = useStore();
+  const { currentCase, progress, toggleUnit, selectCase } = useStore();
   const doneSet = new Set(progress.unitsDone);
 
-  // Apri di default la prima giornata non ancora completata.
+  // La prima giornata non ancora completata.
   const firstIncomplete =
     DAYS.find((d) => dayActivities(d).some((act) => !doneSet.has(act.id)))?.n ??
     DAYS[0].n;
-  const [openDay, setOpenDay] = useState<number>(firstIncomplete);
+  // `null` = nessuna scelta manuale: si segue l'avanzamento. Appena la squadra
+  // apre una giornata a mano, quella resta aperta.
+  const [pinnedDay, setPinnedDay] = useState<number | null>(null);
+  const openDay = pinnedDay ?? firstIncomplete;
+  const setOpenDay = (n: number) => setPinnedDay(n);
 
   const totalDone = ALL_ACTIVITIES.filter((act) => doneSet.has(act.id)).length;
+
+  /** Va all'attività, selezionando prima l'indagine se il piano la nomina. */
+  function go(act: DayActivity) {
+    if (!act.page) return;
+    if (act.caseId && currentCase?.id !== act.caseId) selectCase(act.caseId);
+    onNavigate(act.page);
+    onClose();
+  }
 
   return (
     <>
@@ -135,14 +147,9 @@ export function Sidebar({
                         act={act}
                         page={page}
                         checked={doneSet.has(act.id)}
-                        disabled={!!act.requiresCase && !currentCase}
+                        disabled={!!act.requiresCase && !currentCase && !act.caseId}
                         onToggle={() => toggleUnit(act.id)}
-                        onGo={() => {
-                          if (act.page) {
-                            onNavigate(act.page);
-                            onClose();
-                          }
-                        }}
+                        onGo={() => go(act)}
                       />
                     ))}
                     <BlockLabel>Pomeriggio</BlockLabel>
@@ -152,14 +159,9 @@ export function Sidebar({
                         act={act}
                         page={page}
                         checked={doneSet.has(act.id)}
-                        disabled={!!act.requiresCase && !currentCase}
+                        disabled={!!act.requiresCase && !currentCase && !act.caseId}
                         onToggle={() => toggleUnit(act.id)}
-                        onGo={() => {
-                          if (act.page) {
-                            onNavigate(act.page);
-                            onClose();
-                          }
-                        }}
+                        onGo={() => go(act)}
                       />
                     ))}
                     <div className="mt-1.5">
@@ -167,14 +169,9 @@ export function Sidebar({
                         act={day.output}
                         page={page}
                         checked={doneSet.has(day.output.id)}
-                        disabled={!!day.output.requiresCase && !currentCase}
+                        disabled={!!day.output.requiresCase && !currentCase && !day.output.caseId}
                         onToggle={() => toggleUnit(day.output.id)}
-                        onGo={() => {
-                          if (day.output.page) {
-                            onNavigate(day.output.page);
-                            onClose();
-                          }
-                        }}
+                        onGo={() => go(day.output)}
                         isOutput
                       />
                     </div>

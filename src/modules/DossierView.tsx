@@ -11,6 +11,7 @@ import {
 } from '../components/ui';
 import { AiTutor } from '../components/AiTutor';
 import { dossierToHtml } from '../lib/dossier';
+import { getCase } from '../data/cases';
 import type { DossierEntry } from '../types';
 import { SCREEN_BRIEFINGS } from '../data/tutorBriefings';
 
@@ -21,6 +22,18 @@ const KIND_LABEL: Record<DossierEntry['kind'], string> = {
   proteina: 'La proteina 3D',
   conclusione: 'La conclusione',
 };
+
+/**
+ * Da quale indagine viene una voce. Il dossier è cumulativo: senza questa
+ * etichetta, al Giorno 7 la squadra vede venti voci di cinque casi diversi
+ * tutte uguali.
+ */
+function entryCaseLabel(caseId?: string | null): string {
+  if (!caseId) return 'Indagine';
+  if (caseId === 'giorno0') return 'Giorno 0';
+  if (caseId.startsWith('custom_')) return 'Indagine libera';
+  return getCase(caseId)?.title ?? 'Indagine';
+}
 
 function slugify(s: string): string {
   return (
@@ -37,7 +50,10 @@ export function DossierView({ onNavigate }: { onNavigate: (p: PageId) => void })
   const { currentCase, dossier, addEntry, removeEntry, resetDossier } = useStore();
   const [conclusion, setConclusion] = useState('');
 
-  if (!currentCase) {
+  // Il dossier è cumulativo e sopravvive al cambio di caso: si blocca solo se è
+  // davvero vuoto. Dopo il Giorno 0 non c'è ancora un caso, ma la prima riga
+  // scritta dalla squadra deve restare visibile.
+  if (!currentCase && dossier.entries.length === 0) {
     return <NoCaseNotice moduleLabel="Il dossier" onNavigate={onNavigate} />;
   }
 
@@ -49,7 +65,7 @@ export function DossierView({ onNavigate }: { onNavigate: (p: PageId) => void })
   const exportTitle = `Dossier della squadra ${dossier.team || '—'}`;
 
   function exportHtml() {
-    const html = dossierToHtml(dossier, exportTitle);
+    const html = dossierToHtml(dossier, exportTitle, entryCaseLabel);
     const blob = new Blob([html], { type: 'text/html' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -61,11 +77,15 @@ export function DossierView({ onNavigate }: { onNavigate: (p: PageId) => void })
 
   const aiContext = [
     SCREEN_BRIEFINGS.dossier,
-    `Caso: ${currentCase.title}`,
-    `Domanda: ${currentCase.question}`,
+    currentCase ? `Caso in corso: ${currentCase.title}` : 'Nessuna indagine in corso.',
+    currentCase ? `Domanda: ${currentCase.question}` : '',
     'Elementi già raccolti nel dossier:',
-    ...dossier.entries.map((e) => `- [${KIND_LABEL[e.kind]}] ${e.title}: ${e.body}`),
-  ].join('\n');
+    ...dossier.entries.map(
+      (e) => `- [${entryCaseLabel(e.caseId)} · ${KIND_LABEL[e.kind]}] ${e.title}: ${e.body}`,
+    ),
+  ]
+    .filter(Boolean)
+    .join('\n');
 
   return (
     <div className="fade-up">
@@ -90,9 +110,12 @@ export function DossierView({ onNavigate }: { onNavigate: (p: PageId) => void })
 
       <div className="flex items-baseline justify-between border-t border-rule pt-4">
         <div>
-          <div className="font-serif text-xl text-ink">{currentCase.title}</div>
+          <div className="font-serif text-xl text-ink">
+            {currentCase ? currentCase.title : 'Il percorso della squadra'}
+          </div>
           <div className="text-[13px] text-ink-muted italic">
             Squadra: {dossier.team || '—'}
+            {currentCase ? ' · indagine in corso' : ' · nessuna indagine in corso'}
           </div>
         </div>
         <div className="flex items-center gap-2 shrink-0">
@@ -101,7 +124,7 @@ export function DossierView({ onNavigate }: { onNavigate: (p: PageId) => void })
               onClick={() => {
                 if (
                   confirm(
-                    'Azzerare il dossier? Tutte le voci raccolte verranno eliminate (utile per una nuova squadra).',
+                    'Azzerare tutto? Verranno eliminate le voci raccolte, il nome della squadra e i nomi dei componenti. Usalo quando il computer passa a un\'altra squadra.',
                   )
                 ) {
                   resetDossier();
@@ -122,7 +145,7 @@ export function DossierView({ onNavigate }: { onNavigate: (p: PageId) => void })
         </div>
       </div>
 
-      {!hasQuestion && (
+      {currentCase && !hasQuestion && (
         <Note label="Inizia dalla domanda" tone="amber">
           Aggiungi la domanda biologica scelta dalla squadra: è il filo che lega tutta
           l'indagine.{' '}
@@ -139,6 +162,20 @@ export function DossierView({ onNavigate }: { onNavigate: (p: PageId) => void })
             Usa la domanda del caso
           </button>
           .
+        </Note>
+      )}
+
+      {!currentCase && (
+        <Note label="Il vostro percorso è salvo">
+          Qui resta tutto quello che avete raccolto finora — anche la prima riga
+          scritta nel Giorno 0. Quando scegliete un'indagine, le nuove voci si
+          aggiungono in fondo.{' '}
+          <button
+            onClick={() => onNavigate('home')}
+            className="text-accent font-medium hover:underline"
+          >
+            Vai al catalogo delle indagini →
+          </button>
         </Note>
       )}
 
@@ -165,6 +202,10 @@ export function DossierView({ onNavigate }: { onNavigate: (p: PageId) => void })
                   <div>
                     <div className="font-mono text-[9px] tracking-[.14em] uppercase text-accent">
                       {KIND_LABEL[e.kind]}
+                      <span className="text-ink-muted normal-case tracking-normal">
+                        {' · '}
+                        {entryCaseLabel(e.caseId)}
+                      </span>
                     </div>
                     <div className="font-serif text-lg text-ink mt-0.5">{e.title}</div>
                     <p className="text-[14px] text-ink-light mt-1">{e.body}</p>

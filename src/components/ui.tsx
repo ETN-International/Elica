@@ -202,17 +202,20 @@ export function AddToDossierButton({
   onAdd: () => void;
   label?: string;
 }) {
+  // Una volta salvato resta disabilitato: prima la spunta tornava indietro dopo
+  // due secondi e invitava a ricliccare, creando voci identiche nel dossier.
   const [done, setDone] = useState(false);
   return (
     <button
       onClick={() => {
+        if (done) return;
         onAdd();
         setDone(true);
-        setTimeout(() => setDone(false), 2200);
       }}
+      disabled={done}
       className={`inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium transition ${
         done
-          ? 'border-accent-2/50 bg-[rgba(26,107,82,.1)] text-accent-2'
+          ? 'border-accent-2/50 bg-[rgba(26,107,82,.1)] text-accent-2 cursor-default'
           : 'border-accent-3/40 bg-[rgba(45,74,138,.07)] text-accent-3 hover:bg-[rgba(45,74,138,.13)] cta-pulse'
       }`}
     >

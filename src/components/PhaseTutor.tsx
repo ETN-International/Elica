@@ -57,23 +57,19 @@ export function PhaseTutor({
     return () => c.abort();
   }, [phaseLabel, teamInput, cardine, brief]);
 
-  // Mentre il tutor prepara l'apertura, un riquadro coerente con la chat.
-  if (intro === null) {
-    return (
-      <div className="rounded-xl bg-ink text-paper px-5 py-4 mt-4">
-        <div className="font-mono text-[9px] tracking-[.18em] uppercase text-[#e8935f] mb-2">
-          Il tutor rilancia
-        </div>
-        <p className="text-[#c9bfb4] text-sm italic">Il tutor sta pensando…</p>
-      </div>
-    );
-  }
-
+  // Nota: AiTutor resta SEMPRE montato, anche mentre l'apertura è in arrivo.
+  // Smontarlo (com'era prima) cancellava tutta la conversazione ogni volta che
+  // la squadra rilanciava il proprio testo.
   return (
     <div className="mt-4">
+      {intro === null && (
+        <p className="text-[#8a7f73] text-[12px] italic mb-1 px-1">
+          Il tutor sta preparando una domanda…
+        </p>
+      )}
       <AiTutor
         title={fallback ? 'Una domanda per voi' : 'Il tutor rilancia'}
-        intro={intro}
+        intro={intro ?? undefined}
         context={[
           brief,
           `Giorno 0 — ${phaseLabel}. La squadra ha appena scritto: "${

@@ -25,11 +25,11 @@ export const PROGRAM: ProgramStage[] = [
     n: '2',
     title: 'I tre gesti dell\'indagine',
     hours: 12,
-    goal: 'Imparare a leggere il DNA, confrontare due geni e vedere la proteina in 3D.',
+    goal: 'Vedere la proteina in 3D, confrontare due geni e imparare a leggere il DNA.',
     activities: [
-      'Modulo 1: leggere il DNA con controllo qualità',
+      'Modulo 1: struttura 3D da AlphaFold con Mol*',
       'Modulo 2: confronto e "la scoperta"',
-      'Modulo 3: struttura 3D da AlphaFold con Mol*',
+      'Modulo 3: leggere il DNA con controllo qualità',
       'Primo dossier di prova',
     ],
   },
@@ -107,7 +107,7 @@ export const THEORY: TheoryCard[] = [
     id: 'codone',
     title: 'Codoni e codice genetico',
     short: 'Le lettere si leggono a gruppi di tre.',
-    body: 'Le basi si leggono a triplette, chiamate codoni. Ogni codone corrisponde a un amminoacido (il "mattone" delle proteine). Il codone ATG segna l\'inizio; alcuni codoni dicono STOP. Il codice è ridondante: amminoacidi diversi possono avere più codoni, per questo alcune mutazioni non cambiano nulla.',
+    body: 'Le basi si leggono a triplette, chiamate codoni. Ogni codone corrisponde a un amminoacido (il "mattone" delle proteine). Il codone ATG segna l\'inizio; alcuni codoni dicono STOP. Il codice è ridondante: uno stesso amminoacido può essere scritto con più codoni diversi, per questo alcune mutazioni non cambiano nulla.',
   },
   {
     id: 'proteina',
@@ -131,7 +131,7 @@ export const THEORY: TheoryCard[] = [
     id: 'struttura3d',
     title: 'La struttura 3D',
     short: 'Dalla sequenza alla forma.',
-    body: 'Prevedere come si ripiega una proteina è un problema difficilissimo. AlphaFold (di Google DeepMind con l\'EMBL-EBI) lo ha risolto per oltre 200 milioni di proteine. La nostra app non calcola la struttura: la scarica già pronta da AlphaFold DB e la mostra ruotabile. È lo stesso dato che usano i ricercatori.',
+    body: 'Prevedere come si ripiega una proteina è un problema difficilissimo. AlphaFold (di Google DeepMind con l\'EMBL-EBI) ne ha predetto la forma per oltre 200 milioni di proteine: sono previsioni molto accurate, non misure sperimentali, e qualche proteina resta fuori. La nostra app non calcola la struttura: la scarica già pronta da AlphaFold DB e la mostra ruotabile. È lo stesso dato che usano i ricercatori.',
   },
   {
     id: 'ai-dati',

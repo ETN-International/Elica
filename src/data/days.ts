@@ -8,6 +8,12 @@ export interface DayActivity {
   page?: PageId;
   /** Richiede che sia stata scelta un'indagine. */
   requiresCase?: boolean;
+  /**
+   * Indagine che l'attività deve selezionare prima di navigare. Serve quando il
+   * piano nomina un caso preciso ("Confronta due geni (falciforme)"): senza,
+   * l'attività aprirebbe qualunque caso fosse rimasto in corso.
+   */
+  caseId?: string;
 }
 
 /** Una giornata del percorso (6 ore): mattina, pomeriggio e output. */
@@ -22,11 +28,18 @@ export interface CourseDay {
   output: DayActivity;
 }
 
-const a = (id: string, label: string, page?: PageId, requiresCase?: boolean): DayActivity => ({
+const a = (
+  id: string,
+  label: string,
+  page?: PageId,
+  requiresCase?: boolean,
+  caseId?: string,
+): DayActivity => ({
   id,
   label,
   page,
   requiresCase,
+  caseId,
 });
 
 /** Il percorso: 60 ore = 10 giorni × 6 ore. Mattina ~3h, pomeriggio ~3h. */
@@ -37,13 +50,18 @@ export const DAYS: CourseDay[] = [
     focus: 'Fondamenti',
     morning: [
       a('d1-m1', 'Formazione squadra e nome del team', 'squadra'),
+      // Il Giorno 0 viene PRIMA di qualsiasi parola: è l'ingresso a prerequisito
+      // zero. Senza questa riga l'host che segue la sidebar lo salterebbe.
+      a('d1-m0', 'Giorno 0: la forma, la differenza, le parole', 'giorno0'),
       a('d1-m2', 'Panoramica del percorso', 'programma'),
-      a('d1-m3', 'Teoria: DNA, gene, codone, proteina', 'teoria'),
     ],
     afternoon: [
-      a('d1-p1', "Scegli l'indagine «Emoglobina»", 'home'),
+      a('d1-p1', "Scegli l'indagine «Emoglobina»", 'home', false, 'emoglobina-falciforme'),
       a('d1-p2', 'Osserva la proteina 3D del caso', 'protein', true),
-      a('d1-p3', 'Quiz «Le basi»', 'quiz'),
+      // La teoria arriva DOPO il gesto, non prima: è un riferimento da aprire
+      // quando serve, non una lezione introduttiva.
+      a('d1-p3', 'Teoria: le parole, quando servono', 'teoria'),
+      a('d1-p4', 'Quiz «Le basi»', 'quiz'),
     ],
     output: a('d1-out', 'Output: prima sequenza salvata nel dossier', 'dossier', true),
   },
@@ -66,11 +84,11 @@ export const DAYS: CourseDay[] = [
     title: 'Trova le differenze',
     focus: 'Modulo · Confrontare',
     morning: [
-      a('d3-m1', 'Confronta due geni (falciforme)', 'compare', true),
-      a('d3-m2', 'Leggi «La scoperta»', 'compare', true),
+      a('d3-m1', 'Confronta due geni (falciforme)', 'compare', true, 'emoglobina-falciforme'),
+      a('d3-m2', 'Leggi «La scoperta»', 'compare', true, 'emoglobina-falciforme'),
     ],
     afternoon: [
-      a('d3-p1', 'Secondo confronto (evoluzione: uomo/topo)', 'home'),
+      a('d3-p1', 'Secondo confronto (evoluzione: uomo/ratto)', 'home'),
       a('d3-p2', 'Project work: parenti stretti o lontani?', 'compare', true),
     ],
     output: a('d3-out', 'Output: un confronto interpretato nel dossier', 'dossier', true),

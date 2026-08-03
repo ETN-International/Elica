@@ -10,7 +10,9 @@ export type MutationCategory =
   | 'missenso'
   | 'nonsenso'
   | 'frameshift'
-  | 'inframe-indel';
+  | 'inframe-indel'
+  /** Più mutazioni sovrapposte: l'effetto non è riconducibile a un tipo solo. */
+  | 'multipla';
 
 export interface MutationEffect {
   /** Proteina originale (codice a una lettera). */
@@ -51,6 +53,20 @@ export function applyMutation(
   }
 }
 
+/**
+ * Quanti amminoacidi combaciano all'inizio e alla fine delle due proteine.
+ * Serve a distinguere un indel "pulito" (fianchi intatti, un blocco tolto o
+ * aggiunto in mezzo) da più mutazioni sommate che stravolgono la sequenza.
+ */
+function commonFlanks(a: string, b: string): { pre: number; suf: number } {
+  const max = Math.min(a.length, b.length);
+  let pre = 0;
+  while (pre < max && a[pre] === b[pre]) pre++;
+  let suf = 0;
+  while (suf < max - pre && a[a.length - 1 - suf] === b[b.length - 1 - suf]) suf++;
+  return { pre, suf };
+}
+
 /** Classifica l'effetto della mutazione confrontando le due proteine tradotte. */
 export function classifyMutation(original: string, mutated: string): MutationEffect {
   const o = cleanDna(original).replace(/-/g, '');
@@ -78,22 +94,7 @@ export function classifyMutation(original: string, mutated: string): MutationEff
     };
   }
 
-  // Indel multiplo di 3 (in-frame): la proteina cambia LUNGHEZZA (amminoacidi
-  // aggiunti o rimossi), NON è una sostituzione.
-  if (lenDiff !== 0) {
-    const nAA = Math.abs(lenDiff) / 3;
-    const added = lenDiff > 0;
-    return {
-      originalProtein,
-      mutatedProtein,
-      category: 'inframe-indel',
-      note: added
-        ? `Sono stati aggiunti ${nAA} amminoacidi senza spostare la lettura: la proteina si allunga (inserzione in-frame). Non è una sostituzione: è un pezzo in più.`
-        : `Sono stati rimossi ${nAA} amminoacidi senza spostare la lettura: la proteina si accorcia (delezione in-frame, come la ΔF508 della fibrosi cistica). Non è una sostituzione: manca un pezzo.`,
-    };
-  }
-
-  // Stessa cornice di lettura: confronto amminoacido per amminoacido.
+  // La proteina è identica: mutazione silente (vale anche a lunghezza uguale).
   if (mutatedProtein === originalProtein) {
     return {
       originalProtein,
@@ -103,6 +104,8 @@ export function classifyMutation(original: string, mutated: string): MutationEff
     };
   }
 
+  // Uno STOP che compare prima del dovuto ha SEMPRE la precedenza: la proteina
+  // si tronca, e chiamarla "indel pulito" sarebbe falso.
   const mutStop = mutatedProtein.indexOf('*');
   const origStop = originalProtein.indexOf('*');
   const origEnd = origStop === -1 ? originalProtein.length : origStop;
@@ -116,13 +119,57 @@ export function classifyMutation(original: string, mutated: string): MutationEff
     };
   }
 
+  // Indel multiplo di 3: è "in-frame" SOLO se la proteina risultante è davvero
+  // quella di partenza con un blocco tolto o aggiunto. Non basta che il numero
+  // di basi torni: più mutazioni sommate possono dare lenDiff multiplo di 3 pur
+  // stravolgendo la proteina. Lo verifichiamo sulle proteine vere.
+  if (lenDiff !== 0) {
+    const nAA = Math.abs(lenDiff) / 3;
+    const added = lenDiff > 0;
+    const { pre, suf } = commonFlanks(originalProtein, mutatedProtein);
+    const shorter = Math.min(originalProtein.length, mutatedProtein.length);
+    const lenGap = Math.abs(originalProtein.length - mutatedProtein.length);
+    const isCleanIndel = pre + suf >= shorter && lenGap === nAA;
+
+    if (isCleanIndel) {
+      return {
+        originalProtein,
+        mutatedProtein,
+        category: 'inframe-indel',
+        firstChangedCodon: pre + 1,
+        note: added
+          ? `Sono stati aggiunti ${nAA} amminoacidi senza spostare la lettura: la proteina si allunga (inserzione in-frame). Non è una sostituzione: è un pezzo in più.`
+          : `Sono stati rimossi ${nAA} amminoacidi senza spostare la lettura: la proteina si accorcia (delezione in-frame, come la ΔF508 della fibrosi cistica). Non è una sostituzione: manca un pezzo.`,
+      };
+    }
+    return {
+      originalProtein,
+      mutatedProtein,
+      category: 'multipla',
+      firstChangedCodon: pre + 1,
+      note: 'Qui si sono sommate più mutazioni: il numero di basi torna multiplo di 3, ma la proteina non è semplicemente accorciata o allungata — diversi amminoacidi risultano cambiati. Per vedere un effetto "pulito", riparti dalla sequenza originale e fai una modifica sola.',
+    };
+  }
+
+  // Stessa lunghezza: conto quanti amminoacidi cambiano davvero, così la nota
+  // non parla di "un amminoacido" quando ne sono cambiati parecchi.
   let firstChangedCodon: number | undefined;
+  let changed = 0;
   const len = Math.min(originalProtein.length, mutatedProtein.length);
   for (let i = 0; i < len; i++) {
     if (originalProtein[i] !== mutatedProtein[i]) {
-      firstChangedCodon = i + 1;
-      break;
+      if (firstChangedCodon === undefined) firstChangedCodon = i + 1;
+      changed++;
     }
+  }
+  if (changed > 1) {
+    return {
+      originalProtein,
+      mutatedProtein,
+      category: 'multipla',
+      firstChangedCodon,
+      note: `Sono cambiati ${changed} amminoacidi: qui si sono sommate più mutazioni. Per vedere l'effetto di una sola, riparti dalla sequenza originale.`,
+    };
   }
   return {
     originalProtein,
@@ -143,4 +190,5 @@ export const CATEGORY_STYLE: Record<
   nonsenso: { label: 'Nonsenso', color: 'var(--color-accent)' },
   frameshift: { label: 'Frameshift', color: 'var(--color-accent)' },
   'inframe-indel': { label: 'Indel in-frame', color: 'var(--color-accent-3)' },
+  multipla: { label: 'Mutazioni multiple', color: 'var(--color-ink-light)' },
 };

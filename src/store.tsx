@@ -135,11 +135,24 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
 
   const addEntry = useCallback(
     (entry: Omit<DossierEntry, 'id' | 'createdAt'>) => {
-      setDossier((d) => ({
-        ...d,
-        // La voce viene marcata con il caso corrente (per lo Stepper per-caso).
-        entries: [...d.entries, makeEntry({ caseId: d.caseId ?? undefined, ...entry })],
-      }));
+      setDossier((d) => {
+        const caseId = entry.caseId ?? d.caseId ?? undefined;
+        // Protezione contro i doppi clic: una voce identica (stesso caso, stesso
+        // tipo, stesso testo) non va aggiunta due volte.
+        const duplicata = d.entries.some(
+          (e) =>
+            e.caseId === caseId &&
+            e.kind === entry.kind &&
+            e.title === entry.title &&
+            e.body === entry.body,
+        );
+        if (duplicata) return d;
+        return {
+          ...d,
+          // La voce viene marcata con il caso corrente (per lo Stepper per-caso).
+          entries: [...d.entries, makeEntry({ caseId, ...entry })],
+        };
+      });
     },
     [],
   );
@@ -148,13 +161,13 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
     setDossier((d) => ({ ...d, entries: d.entries.filter((e) => e.id !== id) }));
   }, []);
 
+  /**
+   * Azzera il dossier. Cancella ANCHE nome squadra e componenti: su un PC
+   * condiviso in aula informatica la classe successiva non deve trovarsi i nomi
+   * dei compagni precedenti già scritti (e poi nel proprio dossier esportato).
+   */
   const resetDossier = useCallback(() => {
-    setDossier((d) => ({
-      ...emptyDossier(),
-      team: d.team,
-      members: d.members,
-      caseId: d.caseId,
-    }));
+    setDossier((d) => ({ ...emptyDossier(), caseId: d.caseId }));
   }, []);
 
   const markQuizPassed = useCallback((id: string) => {

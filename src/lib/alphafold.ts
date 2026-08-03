@@ -11,6 +11,22 @@ import type { AlphaFoldModel } from '../types';
 
 const API_BASE = 'https://alphafold.ebi.ac.uk/api/prediction';
 
+/**
+ * AlphaFold DB non ha un modello per questa proteina. Non è un errore dell'app:
+ * la banca dati non copre tutto (per esempio le proteine molto lunghe, come
+ * l'huntingtina con i suoi 3142 amminoacidi).
+ */
+export class NoStructureError extends Error {
+  readonly uniprot: string;
+  constructor(uniprot: string) {
+    super(
+      `AlphaFold DB non ha un modello 3D per ${uniprot}. Capita: la banca dati non copre tutte le proteine — le più lunghe restano fuori. È un limite reale della predizione, non un problema dell'app.`,
+    );
+    this.name = 'NoStructureError';
+    this.uniprot = uniprot;
+  }
+}
+
 interface AlphaFoldApiEntry {
   entryId?: string;
   uniprotAccession?: string;
@@ -34,8 +50,14 @@ export async function fetchAlphaFoldModel(
   const id = uniprot.trim().toUpperCase();
   const res = await fetch(`${API_BASE}/${encodeURIComponent(id)}`);
   if (!res.ok) {
+    // 404 non è un guasto dell'app: AlphaFold DB semplicemente non copre tutte
+    // le proteine (le più lunghe restano fuori). Meglio dirlo che mostrare un
+    // errore tecnico: è un limite reale della predizione, e si può insegnare.
+    if (res.status === 404) {
+      throw new NoStructureError(id);
+    }
     throw new Error(
-      `AlphaFold DB ha risposto ${res.status}. Verifica lo UniProt ID "${id}".`,
+      `AlphaFold DB ha risposto ${res.status}. Riprova tra poco.`,
     );
   }
   const data = (await res.json()) as AlphaFoldApiEntry[];

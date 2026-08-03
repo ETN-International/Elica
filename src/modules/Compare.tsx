@@ -158,6 +158,17 @@ export function Compare({ onNavigate }: { onNavigate: (p: PageId) => void }) {
         <span className="font-mono text-ink-muted">— = gap</span>
       </div>
 
+      {/* Legenda: le due etichette troncate erano identiche ("Bet" e "Bet") e
+          la squadra non distingueva il gene sano da quello mutato. */}
+      <div className="flex flex-wrap gap-x-6 gap-y-1 mb-2 text-[12.5px]">
+        <span className="text-ink-light">
+          <span className="font-mono text-accent font-bold">A</span> = {result.aLabel}
+        </span>
+        <span className="text-ink-light">
+          <span className="font-mono text-accent font-bold">B</span> = {result.bLabel}
+        </span>
+      </div>
+
       <div className="seq-scroll overflow-x-auto rounded-lg bg-paper-2 p-4">
         <div className="min-w-max space-y-4">
           {rows.map((r, ri) => (
@@ -166,7 +177,7 @@ export function Compare({ onNavigate }: { onNavigate: (p: PageId) => void }) {
                 <span className="w-14 shrink-0 text-ink-muted text-[10px] pt-0.5">
                   {r.from}
                 </span>
-                <span className="text-ink-muted mr-2 shrink-0">{result.aLabel.slice(0, 3)}</span>
+                <span className="text-accent font-bold mr-2 shrink-0 w-[1.5rem]">A</span>
                 <SeqRow seq={r.a} match={r.m} />
               </div>
               <div className="flex">
@@ -178,7 +189,7 @@ export function Compare({ onNavigate }: { onNavigate: (p: PageId) => void }) {
               </div>
               <div className="flex">
                 <span className="w-14 shrink-0" />
-                <span className="text-ink-muted mr-2 shrink-0">{result.bLabel.slice(0, 3)}</span>
+                <span className="text-accent font-bold mr-2 shrink-0 w-[1.5rem]">B</span>
                 <SeqRow seq={r.b} match={r.m} />
               </div>
             </div>
@@ -298,7 +309,7 @@ export function Compare({ onNavigate }: { onNavigate: (p: PageId) => void }) {
       <Esercizio
         consegna="Guarda le statistiche qui sopra: quante posizioni differiscono in tutto? (basi diverse + gap)"
         expected={String(result.mismatches + result.gaps)}
-        placeholder={`es. ${result.mismatches + result.gaps}`}
+        placeholder="scrivi un numero"
         explanation={`Le sequenze combaciano al ${result.identityPct}%: ${result.mismatches} basi diverse + ${result.gaps} gap = ${result.mismatches + result.gaps} posizioni differenti.`}
       />
 

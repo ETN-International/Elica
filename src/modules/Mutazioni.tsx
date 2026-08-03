@@ -222,7 +222,7 @@ export function Mutazioni({ onNavigate }: { onNavigate: (p: PageId) => void }) {
       </div>
       {achieved.size === targets.length && (
         <p className="text-[13.5px] text-accent-2 mt-2">
-          ✓ Ottimo! Hai ottenuto tutti e quattro i tipi di mutazione.
+          ✓ Ottimo! Hai ottenuto tutti e {targets.length} i tipi di mutazione.
         </p>
       )}
 

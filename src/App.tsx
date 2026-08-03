@@ -50,7 +50,11 @@ const VALID: PageId[] = [
 
 function pageFromHash(): PageId {
   const h = (location.hash || '').replace('#', '') as PageId;
-  return VALID.includes(h) ? h : 'home';
+  if (VALID.includes(h)) return h;
+  // Rotta inesistente: normalizzo l'URL, altrimenti un deep-link sbagliato
+  // resterebbe sbagliato a ogni ricaricamento.
+  if (h) history.replaceState(null, '', '#home');
+  return 'home';
 }
 
 export function App() {
@@ -58,15 +62,24 @@ export function App() {
   const [menuOpen, setMenuOpen] = useState(false);
 
   const navigate = (p: PageId) => {
+    if (p === page) return;
     setPage(p);
-    history.replaceState(null, '', `#${p}`);
+    // pushState, non replaceState: con replaceState la cronologia non cresceva
+    // mai e il tasto Indietro usciva dall'app — su un tablet in aula significa
+    // perdere la chat aperta e le risposte del quiz.
+    history.pushState(null, '', `#${p}`);
     window.scrollTo(0, 0);
   };
 
   useEffect(() => {
-    const onHash = () => setPage(pageFromHash());
-    window.addEventListener('hashchange', onHash);
-    return () => window.removeEventListener('hashchange', onHash);
+    // `popstate` copre il tasto Indietro; `hashchange` i link diretti.
+    const sync = () => setPage(pageFromHash());
+    window.addEventListener('hashchange', sync);
+    window.addEventListener('popstate', sync);
+    return () => {
+      window.removeEventListener('hashchange', sync);
+      window.removeEventListener('popstate', sync);
+    };
   }, []);
 
   return (

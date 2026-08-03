@@ -42,7 +42,7 @@ export function ReadDna({ onNavigate }: { onNavigate: (p: PageId) => void }) {
     return (
       <div className="fade-up">
         <Stepper current="dna" onNavigate={onNavigate} />
-        <PageHeader eyebrow="Modulo 1 · Leggere il DNA" title="Nessuna sequenza da leggere" />
+        <PageHeader eyebrow="Modulo 3 · Leggere il DNA" title="Nessuna sequenza da leggere" />
         <p className="text-[15px]">
           Questa indagine non ha sequenze di DNA da leggere (può capitare in modalità
           libera o con una proteina singola).{' '}
@@ -77,7 +77,7 @@ export function ReadDna({ onNavigate }: { onNavigate: (p: PageId) => void }) {
     <div className="fade-up">
       <Stepper current="dna" onNavigate={onNavigate} />
       <PageHeader
-        eyebrow="Modulo 1 · Leggere il DNA"
+        eyebrow="Modulo 3 · Leggere il DNA"
         title={
           <>
             Cosa c'è <em className="text-accent not-italic italic">scritto</em> nel gene
@@ -256,7 +256,7 @@ export function ReadDna({ onNavigate }: { onNavigate: (p: PageId) => void }) {
 function NoCase({ onNavigate }: { onNavigate: (p: PageId) => void }) {
   return (
     <div className="fade-up">
-      <PageHeader eyebrow="Modulo 1" title="Prima scegli un'indagine" />
+      <PageHeader eyebrow="Modulo 3" title="Prima scegli un'indagine" />
       <p className="text-[15px]">
         Non hai ancora scelto un caso da indagare.{' '}
         <button

@@ -15,7 +15,7 @@ export function Home({ onNavigate }: { onNavigate: (p: PageId) => void }) {
             Fai vera <em className="text-accent not-italic italic">scienza</em> del DNA
           </>
         }
-        dek="Scegli un'indagine, leggi il DNA, confronta i geni e guarda la proteina in 3D. L'AI ti guida; i dati esatti vengono da banche scientifiche vere."
+        dek="Scegli un'indagine, guarda la proteina in 3D, confronta i geni e leggi il DNA. L'AI ti guida; i dati esatti vengono da banche scientifiche vere."
       />
 
       {THEMES.map((theme) => {

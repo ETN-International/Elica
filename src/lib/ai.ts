@@ -20,7 +20,7 @@ import type { ChatMessage, ChatAttachment } from '../types';
  */
 
 // ── Configurazione ────────────────────────────────────────────────────────
-// Axon Brain (Spark): es. VITE_SPARK_URL=http://100.72.206.121:8088/v1
+// Axon Brain (Spark): es. VITE_SPARK_URL=http://<spark-host>:8088/v1
 const SPARK_URL = (import.meta.env.VITE_SPARK_URL as string | undefined)?.replace(/\/+$/, '');
 const SPARK_MODEL =
   (import.meta.env.VITE_SPARK_MODEL as string | undefined) ??
@@ -29,6 +29,8 @@ const SPARK_MODEL =
 // Proxy Anthropic (alternativa)
 const PROXY_URL = import.meta.env.VITE_AI_PROXY_URL as string | undefined;
 const ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
+/** Token d'aula, deve combaciare con il secret ACCESS_TOKEN della function. */
+const GENOMA_KEY = import.meta.env.VITE_GENOMA_KEY as string | undefined;
 
 function hasSpark(): boolean {
   return typeof SPARK_URL === 'string' && SPARK_URL.length > 0;
@@ -154,6 +156,47 @@ function buildUserContent(prompt: string, attachments?: ChatAttachment[]): Spark
   return parts;
 }
 
+/** Testo di rimpiazzo quando la squadra invia solo allegati, senza scrivere. */
+const ONLY_ATTACHMENT_PROMPT =
+  'Dai un’occhiata a cosa ho allegato e aiutami a ragionarci su.';
+
+/**
+ * Trasforma la cronologia in messaggi per il modello.
+ *
+ * Due trappole opposte, entrambe viste sul campo:
+ *  - scartare gli allegati passati → al turno dopo il modello non "vede" più
+ *    l'immagine di cui la squadra sta parlando, e riceve un messaggio vuoto;
+ *  - rimandarli tutti a ogni turno → megabyte di base64 duplicati.
+ * Compromesso: le immagini restano solo per l'ULTIMO turno che ne aveva; i più
+ * vecchi diventano una menzione testuale.
+ */
+function historyToMessages(
+  history: ChatMessage[],
+): { role: string; content: SparkContent }[] {
+  const msgs = history.filter((m) => m.role === 'user' || m.role === 'assistant');
+  let lastWithImage = -1;
+  msgs.forEach((m, i) => {
+    if (m.role === 'user' && m.attachments?.some((a) => a.kind === 'image' && a.dataUrl)) {
+      lastWithImage = i;
+    }
+  });
+
+  return msgs.map((m, i) => {
+    const text = (m.content ?? '').toString().slice(0, 4000);
+    if (m.role !== 'user' || !m.attachments?.length) {
+      return { role: m.role, content: text || ONLY_ATTACHMENT_PROMPT };
+    }
+    if (i === lastWithImage) {
+      return {
+        role: m.role,
+        content: buildUserContent(text || ONLY_ATTACHMENT_PROMPT, m.attachments),
+      };
+    }
+    const names = m.attachments.map((a) => a.name).join(', ');
+    return { role: m.role, content: `${text || ONLY_ATTACHMENT_PROMPT}\n[allegati: ${names}]` };
+  });
+}
+
 /**
  * Invia una domanda al tutor AI e restituisce la risposta in italiano.
  * Sceglie automaticamente Axon Brain (Spark) o il proxy Anthropic.
@@ -167,15 +210,14 @@ export async function askAi(opts: AskAiOptions): Promise<string> {
 
 // ── Axon Brain (DGX Spark, OpenAI-compatibile) ─────────────────────────────
 async function askSpark(opts: AskAiOptions): Promise<string> {
-  const history = (opts.history ?? [])
-    .filter((m) => m.role === 'user' || m.role === 'assistant')
-    .map((m) => ({ role: m.role, content: m.content.toString().slice(0, 4000) }));
-
   const messages: { role: string; content: SparkContent }[] = [
     { role: 'system', content: buildSystem(opts.context) },
-    ...history,
+    ...historyToMessages(opts.history ?? []),
     // La domanda dello studente (+ eventuali allegati) — come in una chat normale.
-    { role: 'user', content: buildUserContent(opts.prompt, opts.attachments) },
+    {
+      role: 'user',
+      content: buildUserContent(opts.prompt || ONLY_ATTACHMENT_PROMPT, opts.attachments),
+    },
   ];
 
   const res = await fetch(`${SPARK_URL}/chat/completions`, {
@@ -220,18 +262,30 @@ async function askProxy(opts: AskAiOptions): Promise<string> {
     headers['Authorization'] = `Bearer ${ANON_KEY}`;
     headers['apikey'] = ANON_KEY;
   }
+  // Token d'aula: distingue l'app da uno script qualsiasi che conosce l'URL.
+  if (GENOMA_KEY) headers['x-genoma-key'] = GENOMA_KEY;
 
-  // La Edge Function fa da gateway: gli allegati (immagini + testo) li inoltra
-  // al cervello (Axon Brain vede le immagini; con Anthropic i testi finiscono
-  // nel prompt e le immagini vengono ignorate lato server).
+  // La cronologia viaggia in solo testo: gli allegati del turno CORRENTE sono in
+  // `attachments`, quelli vecchi resterebbero megabyte di base64 duplicati.
+  const history = (opts.history ?? [])
+    .filter((m) => m.role === 'user' || m.role === 'assistant')
+    .map((m) => ({
+      role: m.role,
+      content:
+        (m.content || ONLY_ATTACHMENT_PROMPT).toString().slice(0, 4000) +
+        (m.attachments?.length
+          ? `\n[allegati: ${m.attachments.map((a) => a.name).join(', ')}]`
+          : ''),
+    }));
+
   const res = await fetch(PROXY_URL as string, {
     method: 'POST',
     headers,
     signal: opts.signal,
     body: JSON.stringify({
-      prompt: opts.prompt,
+      prompt: opts.prompt || ONLY_ATTACHMENT_PROMPT,
       context: opts.context ?? '',
-      history: opts.history ?? [],
+      history,
       attachments: opts.attachments ?? [],
     }),
   });

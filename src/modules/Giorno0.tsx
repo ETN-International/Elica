@@ -86,7 +86,13 @@ export function Giorno0({ onNavigate }: { onNavigate: (p: PageId) => void }) {
         />
       )}
       {phase.id === 'c' && (
-        <PhaseC onNext={() => setPhaseIdx(3)} onNavigate={onNavigate} />
+        <PhaseC
+          onNext={() => setPhaseIdx(3)}
+          onNavigate={onNavigate}
+          cardine={phase.cardine}
+          tag={phase.tag}
+          brief={GIORNO0_PHASE_BRIEF.c}
+        />
       )}
       {phase.id === 'd' && (
         <PhaseD
@@ -310,10 +316,17 @@ function PhaseB({
 function PhaseC({
   onNext,
   onNavigate,
+  cardine,
+  tag,
+  brief,
 }: {
   onNext: () => void;
   onNavigate: (p: PageId) => void;
+  cardine: string;
+  tag: string;
+  brief: string;
 }) {
+  const [scelta, setScelta] = useState('');
   return (
     <>
       <p className="text-[15.5px] mt-4">
@@ -345,6 +358,16 @@ function PhaseC({
         </button>{' '}
         se un concetto vi incuriosisce. Chi ha capito dal gesto può proseguire.
       </Note>
+
+      {/* È la fase in cui compaiono le parole: chi non ha basi ha più bisogno
+          di chiedere proprio qui. Prima non c'era alcun tutor. */}
+      <TeamAnswer
+        placeholder="Quale delle tre parole vi incuriosisce di più? Perché?"
+        onSubmit={(txt) => setScelta(txt)}
+      />
+      {scelta && (
+        <PhaseTutor phaseLabel={tag} teamInput={scelta} cardine={cardine} brief={brief} />
+      )}
 
       <div className="mt-4">
         <button
