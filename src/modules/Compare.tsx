@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import type { PageId } from '../App';
 import { useStore } from '../store';
 import {
@@ -17,11 +17,13 @@ import {
 import { AiTutor } from '../components/AiTutor';
 import { alignSequences, describeDifferences, MAX_SEQ_LENGTH } from '../lib/alignment';
 import { SCREEN_BRIEFINGS } from '../data/tutorBriefings';
+import { teamWritingContext } from '../lib/teamContext';
 
 const ROW = 45; // basi per riga nella visualizzazione allineata
 
 export function Compare({ onNavigate }: { onNavigate: (p: PageId) => void }) {
-  const { currentCase, addEntry } = useStore();
+  const { currentCase, addEntry, dossier } = useStore();
+  const [draft, setDraft] = useState('');
 
   const a = currentCase?.sequences[0];
   const b = currentCase?.sequences[1];
@@ -102,6 +104,7 @@ export function Compare({ onNavigate }: { onNavigate: (p: PageId) => void }) {
 
   const aiContext = [
     SCREEN_BRIEFINGS.compare,
+    teamWritingContext(dossier, currentCase?.id, draft),
     `Caso: ${currentCase.title}`,
     `Domanda biologica: ${currentCase.question}`,
     `Confronto tra: "${result.aLabel}" e "${result.bLabel}"`,
@@ -117,7 +120,9 @@ export function Compare({ onNavigate }: { onNavigate: (p: PageId) => void }) {
     result.alignedA,
     result.matchLine,
     result.alignedB,
-  ].join('\n');
+  ]
+    .filter(Boolean)
+    .join('\n');
 
   return (
     <div className="fade-up">
@@ -315,6 +320,7 @@ export function Compare({ onNavigate }: { onNavigate: (p: PageId) => void }) {
       />
 
       <ProjectWork
+        onDraft={setDraft}
         consegna="Interpretate la scoperta: cosa comporta la differenza trovata? Questi due geni sono parenti stretti o lontani? Motivate."
         onSave={(txt) =>
           addEntry({

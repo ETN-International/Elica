@@ -18,9 +18,11 @@ import { AiTutor } from '../components/AiTutor';
 import { MolstarViewer } from '../components/MolstarViewer';
 import { fetchAlphaFoldModel, NoStructureError } from '../lib/alphafold';
 import { SCREEN_BRIEFINGS } from '../data/tutorBriefings';
+import { teamWritingContext } from '../lib/teamContext';
 
 export function Protein({ onNavigate }: { onNavigate: (p: PageId) => void }) {
-  const { currentCase, addEntry } = useStore();
+  const { currentCase, addEntry, dossier } = useStore();
+  const [draft, setDraft] = useState('');
   const [model, setModel] = useState<AlphaFoldModel | null>(null);
   const [error, setError] = useState<string | null>(null);
   /** true quando AlphaFold non copre questa proteina (non è un guasto). */
@@ -62,6 +64,7 @@ export function Protein({ onNavigate }: { onNavigate: (p: PageId) => void }) {
   const aiContext = model
     ? [
         SCREEN_BRIEFINGS.protein,
+        teamWritingContext(dossier, currentCase?.id, draft),
         `Caso: ${currentCase.title}`,
         `Domanda biologica: ${currentCase.question}`,
         `Proteina mostrata in 3D: ${model.proteinName ?? currentCase.protein.name}`,
@@ -168,6 +171,7 @@ export function Protein({ onNavigate }: { onNavigate: (p: PageId) => void }) {
           )}
 
           <ProjectWork
+            onDraft={setDraft}
             consegna="Ruotate la proteina e descrivetela: è compatta (globulare) o allungata? Dove sembra più stabile? Collegate la forma alla sua funzione."
             onSave={(txt) =>
               addEntry({

@@ -360,11 +360,17 @@ export function ProjectWork({
   consegna,
   placeholder,
   onSave,
+  onDraft,
   buttonLabel = 'Salva come output nel dossier',
 }: {
   consegna: string;
   placeholder?: string;
   onSave: (text: string) => void;
+  /**
+   * Notifica il testo mentre lo scrivono, così il modulo può passarlo al tutor:
+   * è proprio mentre stanno scrivendo che chiedono "che ne pensi?".
+   */
+  onDraft?: (text: string) => void;
   buttonLabel?: string;
 }) {
   const [text, setText] = useState('');
@@ -381,6 +387,7 @@ export function ProjectWork({
         onChange={(e) => {
           setText(e.target.value);
           setSaved(false);
+          onDraft?.(e.target.value);
         }}
         rows={3}
         aria-label="Risposta della squadra (project work)"

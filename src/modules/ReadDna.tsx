@@ -23,9 +23,11 @@ import {
   translateCodon,
 } from '../lib/dna';
 import { SCREEN_BRIEFINGS } from '../data/tutorBriefings';
+import { teamWritingContext } from '../lib/teamContext';
 
 export function ReadDna({ onNavigate }: { onNavigate: (p: PageId) => void }) {
-  const { currentCase, addEntry } = useStore();
+  const { currentCase, addEntry, dossier } = useStore();
+  const [draft, setDraft] = useState('');
   const [selected, setSelected] = useState(0);
 
   const seq = currentCase?.sequences[selected] ?? currentCase?.sequences[0];
@@ -63,6 +65,7 @@ export function ReadDna({ onNavigate }: { onNavigate: (p: PageId) => void }) {
 
   const aiContext = [
     SCREEN_BRIEFINGS.dna,
+    teamWritingContext(dossier, currentCase?.id, draft),
     `Caso: ${currentCase.title}`,
     `Domanda biologica: ${currentCase.question}`,
     `Sequenza scelta: ${seq.label}`,
@@ -72,7 +75,9 @@ export function ReadDna({ onNavigate }: { onNavigate: (p: PageId) => void }) {
     `Controllo qualità: ${quality
       .map((q) => `${q.label}=${q.ok ? 'ok' : 'attenzione'}`)
       .join(', ')}`,
-  ].join('\n');
+  ]
+    .filter(Boolean)
+    .join('\n');
 
   return (
     <div className="fade-up">
@@ -200,6 +205,7 @@ export function ReadDna({ onNavigate }: { onNavigate: (p: PageId) => void }) {
       />
 
       <ProjectWork
+        onDraft={setDraft}
         consegna={`Con parole vostre: cosa codifica "${seq.label}" e perché è importante? Guardate la traduzione e chiedete al tutor.`}
         onSave={(txt) =>
           addEntry({

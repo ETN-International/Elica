@@ -19,11 +19,13 @@ import {
   type MutationOp,
 } from '../lib/mutation';
 import { SCREEN_BRIEFINGS } from '../data/tutorBriefings';
+import { teamWritingContext } from '../lib/teamContext';
 
 const SAMPLE = 'ATGGTGCACCTGACTCCTGAGGAGAAGTCTGCCGTTACT';
 
 export function Mutazioni({ onNavigate }: { onNavigate: (p: PageId) => void }) {
-  const { currentCase, addEntry } = useStore();
+  const { currentCase, addEntry, dossier } = useStore();
+  const [draft, setDraft] = useState('');
 
   // Sequenze disponibili: quelle del caso corrente, o un campione di partenza.
   const available =
@@ -228,6 +230,7 @@ export function Mutazioni({ onNavigate }: { onNavigate: (p: PageId) => void }) {
       )}
 
       <ProjectWork
+        onDraft={setDraft}
         consegna="Qual è la mutazione più dannosa che siete riusciti a creare, e perché? Spiegate l'effetto sulla proteina."
         onSave={(txt) =>
           addEntry({
@@ -268,6 +271,7 @@ export function Mutazioni({ onNavigate }: { onNavigate: (p: PageId) => void }) {
           title="Il tutor spiega la mutazione"
           context={[
             SCREEN_BRIEFINGS.mutazioni,
+            teamWritingContext(dossier, currentCase?.id, draft),
             `Sequenza di partenza: ${available[sourceIdx].label}`,
             `Tipo di mutazione ottenuta: ${style.label}`,
             `Proteina originale: ${effect.originalProtein}`,
