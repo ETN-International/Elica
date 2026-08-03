@@ -12,6 +12,7 @@ import {
   HowTo,
   Esercizio,
   ProjectWork,
+  ProssimoPasso,
 } from '../components/ui';
 import { AiTutor } from '../components/AiTutor';
 import { MolstarViewer } from '../components/MolstarViewer';
@@ -195,12 +196,6 @@ export function Protein({ onNavigate }: { onNavigate: (p: PageId) => void }) {
                 })
               }
             />
-            <button
-              onClick={() => onNavigate('compare')}
-              className="text-sm font-mono text-accent hover:underline"
-            >
-              Confronta i geni <span className="nudge">→</span>
-            </button>
           </div>
         </>
       )}
@@ -217,6 +212,14 @@ export function Protein({ onNavigate }: { onNavigate: (p: PageId) => void }) {
           ]}
         />
       </div>
+
+      <ProssimoPasso
+        fatto="Avete guardato la forma della proteina."
+        ora="Il passo successivo è scoprire se il gene che la costruisce cambia da una versione all'altra."
+        azione="Confronta i due geni"
+        onGo={() => onNavigate('compare')}
+        alternativa={{ testo: 'rivedi il dossier', onGo: () => onNavigate('dossier') }}
+      />
     </div>
   );
 }

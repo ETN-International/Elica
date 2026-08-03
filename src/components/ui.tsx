@@ -105,6 +105,58 @@ export function HowTo({ steps }: { steps: string[] }) {
   );
 }
 
+/**
+ * Il cartello "e adesso?" in fondo a ogni schermata di lavoro.
+ *
+ * Per una squadra senza basi il punto più fragile non è capire la biologia: è
+ * non sapere cosa fare quando una cosa è finita. Qui chiudiamo sempre il giro
+ * con una frase che dice a che punto sono e un solo pulsante grande da premere.
+ */
+export function ProssimoPasso({
+  fatto,
+  ora,
+  azione,
+  onGo,
+  alternativa,
+}: {
+  /** Cos'hanno appena finito, con parole loro. */
+  fatto: string;
+  /** Perché il passo dopo ha senso. */
+  ora: string;
+  /** Testo del pulsante principale. */
+  azione: string;
+  onGo: () => void;
+  /** Una seconda strada, per chi vuole fare altro. */
+  alternativa?: { testo: string; onGo: () => void };
+}) {
+  return (
+    <div className="rounded-xl border border-accent/30 bg-[rgba(200,66,10,.05)] px-5 py-5 mt-8">
+      <div className="font-mono text-[9.5px] tracking-[.18em] uppercase text-accent mb-2">
+        E adesso?
+      </div>
+      <p className="text-[15px] text-ink-light mb-3">
+        <strong className="text-ink">{fatto}</strong> {ora}
+      </p>
+      <div className="flex flex-wrap items-center gap-4">
+        <button
+          onClick={onGo}
+          className="rounded-lg bg-accent text-white px-5 py-2.5 text-sm font-medium hover:opacity-90 transition cta-pulse"
+        >
+          {azione} <span className="nudge">→</span>
+        </button>
+        {alternativa && (
+          <button
+            onClick={alternativa.onGo}
+            className="text-sm text-ink-muted hover:text-accent transition"
+          >
+            oppure {alternativa.testo}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 /** Avviso mostrato quando un modulo è aperto senza aver scelto un caso. */
 export function NoCaseNotice({
   moduleLabel,

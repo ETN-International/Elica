@@ -4,7 +4,40 @@ import { useStore } from '../store';
 import { PageHeader, Note, Difficulty } from '../components/ui';
 
 export function Home({ onNavigate }: { onNavigate: (p: PageId) => void }) {
-  const { currentCase, selectCase } = useStore();
+  const { currentCase, selectCase, dossier, progress } = useStore();
+
+  // La squadra arriva qui a freddo, spesso senza sapere cosa sia un gene: prima
+  // del catalogo deve vedere DA DOVE SI COMINCIA, e a che punto è già.
+  const haSquadra = !!dossier.team?.trim();
+  const haFattoGiorno0 =
+    progress.unitsDone.includes('d1-m0') ||
+    dossier.entries.some((e) => e.caseId === 'giorno0');
+
+  const passi = [
+    {
+      fatto: haSquadra,
+      titolo: 'Formate la squadra',
+      testo: 'Un nome e i componenti: comparirà sul dossier che presenterete.',
+      azione: 'Vai alla squadra',
+      page: 'squadra' as PageId,
+    },
+    {
+      fatto: haFattoGiorno0,
+      titolo: 'Fate il Giorno 0',
+      testo:
+        'Mezz\'ora senza parole difficili: una forma che gira, due sequenze quasi uguali, e le parole arrivano dopo. Si parte da qui anche senza sapere nulla di biologia.',
+      azione: 'Comincia dal Giorno 0',
+      page: 'giorno0' as PageId,
+    },
+    {
+      fatto: !!currentCase,
+      titolo: "Scegliete la prima indagine",
+      testo: 'Le trovate qui sotto. Consigliata la prima: «Emoglobina».',
+      azione: null,
+      page: 'home' as PageId,
+    },
+  ];
+  const prossimo = passi.find((p) => !p.fatto);
 
   return (
     <div className="fade-up">
@@ -17,6 +50,53 @@ export function Home({ onNavigate }: { onNavigate: (p: PageId) => void }) {
         }
         dek="Scegli un'indagine, guarda la proteina in 3D, confronta i geni e leggi il DNA. L'AI ti guida; i dati esatti vengono da banche scientifiche vere."
       />
+
+      {/* Bussola d'avvio: sempre visibile finché il giro non è completo. */}
+      {prossimo && (
+        <div className="rounded-xl border border-accent/30 bg-[rgba(200,66,10,.05)] px-5 py-5 mb-8">
+          <div className="font-mono text-[9.5px] tracking-[.18em] uppercase text-accent mb-3">
+            Da dove si comincia
+          </div>
+          <ol className="space-y-2.5 mb-4">
+            {passi.map((p, i) => (
+              <li key={i} className="flex gap-3 items-start">
+                <span
+                  className={`inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-mono mt-0.5 ${
+                    p.fatto
+                      ? 'bg-accent-2 text-white'
+                      : p === prossimo
+                        ? 'bg-accent text-white'
+                        : 'bg-white/60 text-ink-muted border border-rule'
+                  }`}
+                >
+                  {p.fatto ? '✓' : i + 1}
+                </span>
+                <span className={p.fatto ? 'opacity-55' : ''}>
+                  <span className="text-[15px] text-ink font-medium">{p.titolo}</span>
+                  {p === prossimo && (
+                    <span className="block text-[13.5px] text-ink-light mt-0.5">
+                      {p.testo}
+                    </span>
+                  )}
+                </span>
+              </li>
+            ))}
+          </ol>
+          {prossimo.azione && (
+            <button
+              onClick={() => onNavigate(prossimo.page)}
+              className="rounded-lg bg-accent text-white px-5 py-2.5 text-sm font-medium hover:opacity-90 transition cta-pulse"
+            >
+              {prossimo.azione} <span className="nudge">→</span>
+            </button>
+          )}
+          {!prossimo.azione && (
+            <p className="text-[13.5px] text-ink-muted">
+              👇 Scegliete un'indagine dall'elenco qui sotto.
+            </p>
+          )}
+        </div>
+      )}
 
       {THEMES.map((theme) => {
         const cases = casesByTheme(theme);

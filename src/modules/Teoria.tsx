@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { PageId } from '../App';
-import { PageHeader, Note } from '../components/ui';
+import { PageHeader, Note, HowTo } from '../components/ui';
 import { THEORY } from '../data/theory';
 
 export function Teoria({ onNavigate }: { onNavigate: (p: PageId) => void }) {
@@ -16,6 +16,14 @@ export function Teoria({ onNavigate }: { onNavigate: (p: PageId) => void }) {
           </>
         }
         dek="Otto schede essenziali per capire cosa fai in laboratorio. Clicca su una scheda per aprirla."
+      />
+
+      <HowTo
+        steps={[
+          "Non serve leggerle tutte: apri la scheda della parola che ti serve adesso.",
+          "Ogni scheda si legge in un minuto.",
+          "Se qualcosa resta oscuro, chiedilo al tutor dentro il modulo su cui stai lavorando.",
+        ]}
       />
 
       <div className="space-y-2">

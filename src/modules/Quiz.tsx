@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { PageId } from '../App';
 import { useStore } from '../store';
-import { PageHeader, Sub, Note } from '../components/ui';
+import { PageHeader, Sub, Note, HowTo } from '../components/ui';
 import { QUIZZES, CHALLENGES, type QuizSet } from '../data/quiz';
 
 export function Quiz({ onNavigate }: { onNavigate: (p: PageId) => void }) {
@@ -17,6 +17,14 @@ export function Quiz({ onNavigate }: { onNavigate: (p: PageId) => void }) {
           </>
         }
         dek="Tre quiz veloci per consolidare, e alcune sfide da completare come squadra durante il laboratorio."
+      />
+
+      <HowTo
+        steps={[
+          "Scegli un quiz: parti da «Le basi», gli altri dopo i moduli corrispondenti.",
+          "Rispondi senza fretta: sbagliare va benissimo, si può riprovare.",
+          "Le sfide di squadra si spuntano a mano quando le avete completate insieme.",
+        ]}
       />
 
       {QUIZZES.map((q) => (

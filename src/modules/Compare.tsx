@@ -12,6 +12,7 @@ import {
   HowTo,
   Esercizio,
   ProjectWork,
+  ProssimoPasso,
 } from '../components/ui';
 import { AiTutor } from '../components/AiTutor';
 import { alignSequences, describeDifferences, MAX_SEQ_LENGTH } from '../lib/alignment';
@@ -347,12 +348,6 @@ export function Compare({ onNavigate }: { onNavigate: (p: PageId) => void }) {
             })
           }
         />
-        <button
-          onClick={() => onNavigate('dna')}
-          className="text-sm font-mono text-accent hover:underline"
-        >
-          Leggi il DNA <span className="nudge">→</span>
-        </button>
       </div>
 
       <div className="mt-6">
@@ -367,6 +362,14 @@ export function Compare({ onNavigate }: { onNavigate: (p: PageId) => void }) {
           ]}
         />
       </div>
+
+      <ProssimoPasso
+        fatto="Avete trovato dove i due geni differiscono."
+        ora="Adesso guardate cosa c'è scritto davvero nel gene: le lettere si leggono a gruppi di tre."
+        azione="Leggi il DNA"
+        onGo={() => onNavigate('dna')}
+        alternativa={{ testo: 'salva e vai al dossier', onGo: () => onNavigate('dossier') }}
+      />
     </div>
   );
 }

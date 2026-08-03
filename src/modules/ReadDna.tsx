@@ -10,6 +10,7 @@ import {
   HowTo,
   Esercizio,
   ProjectWork,
+  ProssimoPasso,
 } from '../components/ui';
 import { AiTutor } from '../components/AiTutor';
 import {
@@ -229,12 +230,6 @@ export function ReadDna({ onNavigate }: { onNavigate: (p: PageId) => void }) {
             })
           }
         />
-        <button
-          onClick={() => onNavigate('dossier')}
-          className="text-sm font-mono text-accent hover:underline"
-        >
-          Vai al dossier <span className="nudge">→</span>
-        </button>
       </div>
 
       <div className="mt-6">
@@ -249,6 +244,14 @@ export function ReadDna({ onNavigate }: { onNavigate: (p: PageId) => void }) {
           ]}
         />
       </div>
+
+      <ProssimoPasso
+        fatto="Avete letto il gene codone per codone."
+        ora="Avete visto la forma, il confronto e la lettura: è il momento di mettere insieme la vostra scoperta."
+        azione="Vai al dossier"
+        onGo={() => onNavigate('dossier')}
+        alternativa={{ testo: 'prova a mutare il DNA', onGo: () => onNavigate('mutazioni') }}
+      />
     </div>
   );
 }

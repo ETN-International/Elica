@@ -8,6 +8,7 @@ import {
   HowTo,
   AddToDossierButton,
   ProjectWork,
+  ProssimoPasso,
 } from '../components/ui';
 import { AiTutor } from '../components/AiTutor';
 import { cleanDna } from '../lib/dna';
@@ -287,11 +288,14 @@ export function Mutazioni({ onNavigate }: { onNavigate: (p: PageId) => void }) {
         />
       </div>
 
-      <div className="mt-6 text-sm font-mono text-accent">
-        <button onClick={() => onNavigate('dossier')} className="hover:underline">
-          Vai al dossier <span className="nudge">→</span>
-        </button>
-      </div>
+      <ProssimoPasso
+        fatto="Avete visto cosa succede alla proteina quando il DNA cambia."
+        ora="Salvate la mutazione più interessante che avete trovato: entrerà nel racconto per la giuria."
+        azione="Vai al dossier"
+        onGo={() => onNavigate('dossier')}
+        alternativa={{ testo: 'mettiti alla prova col quiz', onGo: () => onNavigate('quiz') }}
+      />
+
     </div>
   );
 }

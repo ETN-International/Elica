@@ -1,6 +1,6 @@
 import type { PageId } from '../App';
 import { useStore } from '../store';
-import { PageHeader, Sub, Note } from '../components/ui';
+import { PageHeader, Sub, Note, HowTo } from '../components/ui';
 import { QUIZZES, CHALLENGES } from '../data/quiz';
 
 /** Criteri della rubrica che la giuria (e la squadra) usano per valutare il dossier. */
@@ -92,6 +92,14 @@ export function Valutazione({ onNavigate }: { onNavigate: (p: PageId) => void })
           </>
         }
         dek="Come si valuta un'indagine e a che punto è la vostra squadra. La rubrica è la stessa che userà la giuria."
+      />
+
+      <HowTo
+        steps={[
+          "Leggi la rubrica: è esattamente ciò che guarderà la giuria.",
+          "Controlla i badge: ti dicono quali gesti dell'indagine avete già fatto.",
+          "Quello che manca lo trovi nei moduli: torna indietro e completalo.",
+        ]}
       />
 
       <Sub>I vostri badge · {earned}/{badges.length}</Sub>
