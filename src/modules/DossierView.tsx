@@ -255,6 +255,7 @@ export function DossierView({ onNavigate }: { onNavigate: (p: PageId) => void })
       <div className="mt-6">
         <AiTutor
           title="Il tutor aiuta a scrivere"
+          cardine="Rileggete le voci raccolte: qual \u00e8 la scoperta pi\u00f9 importante che avete fatto? Provate a dirla in due righe, come la direste a un compagno che non era con voi."
           context={aiContext}
           intro="Ho sotto mano tutto quello che avete raccolto. Chiedimi di aiutarvi a scrivere la conclusione o a formulare meglio la domanda."
           suggestions={[

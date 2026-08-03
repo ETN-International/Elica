@@ -241,6 +241,7 @@ export function ReadDna({ onNavigate }: { onNavigate: (p: PageId) => void }) {
       <div className="mt-6">
         <AiTutor
           title="Il tutor spiega la sequenza"
+          cardine="Contate i codoni e guardate la proteina che ne esce: quante lettere di DNA servono per un solo amminoacido? E cosa succederebbe se ne togliessimo una sola dall\u2019inizio?"
           context={aiContext}
           intro={`Stai guardando "${seq.label}". Chiedimi cosa codifica questo gene, cosa cercare, o cosa significano i codoni.`}
           suggestions={[

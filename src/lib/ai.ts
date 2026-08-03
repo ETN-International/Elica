@@ -100,14 +100,27 @@ export interface AskAiOptions {
   signal?: AbortSignal;
 }
 
+/**
+ * Nessun cervello configurato.
+ *
+ * Il messaggio è rivolto agli STUDENTI: in aula legge questa riga un ragazzo di
+ * quindici anni, non chi ha fatto il deploy. I nomi delle variabili d'ambiente
+ * finiscono nella console, dove serve a chi configura.
+ */
 export class AiNotConfiguredError extends Error {
   constructor() {
     super(
-      'Il tutor AI non è ancora configurato. Imposta VITE_SPARK_URL (Axon Brain sul DGX Spark) ' +
-        'oppure VITE_AI_PROXY_URL (proxy Anthropic). ' +
-        'Nel frattempo i moduli scientifici (lettura DNA, confronto, proteina 3D) funzionano lo stesso.',
+      'Il tutor non è disponibile su questa postazione. Potete proseguire lo stesso: ' +
+        'la proteina 3D, il confronto dei geni e la lettura del DNA funzionano tutti — ' +
+        'sono la parte che conta, e i dati restano quelli veri. Se vi serve una mano, ' +
+        'chiedete a chi conduce il laboratorio.',
     );
     this.name = 'AiNotConfiguredError';
+    console.warn(
+      '[ETN Genoma] Tutor non configurato: imposta VITE_SPARK_URL (Axon Brain sullo Spark) ' +
+        'oppure VITE_AI_PROXY_URL (gateway). In produzione le variabili VITE_ vanno definite ' +
+        'nella build del sito: un file .env.local non arriva al server di build.',
+    );
   }
 }
 

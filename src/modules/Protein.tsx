@@ -207,6 +207,7 @@ export function Protein({ onNavigate }: { onNavigate: (p: PageId) => void }) {
       <div className="mt-6">
         <AiTutor
           title="Il tutor racconta la struttura"
+          cardine="Guardate la forma girandola: dov\u2019\u00e8 pi\u00f9 compatta e dove sembra pi\u00f9 esposta? Secondo voi la parte compatta serve a tenere insieme il resto \u2014 e se cambiasse, la proteina reggerebbe lo stesso?"
           context={aiContext}
           intro="Ruota la proteina col mouse. Chiedimi cosa stai guardando: dove sono le parti stabili, come la forma determina la funzione."
           suggestions={[

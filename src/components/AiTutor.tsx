@@ -14,6 +14,13 @@ interface AiTutorProps {
   suggestions?: string[];
   /** Messaggio introduttivo del tutor. */
   intro?: string;
+  /**
+   * Domanda di riserva, cablata nell'app: si mostra quando il tutor non è
+   * disponibile. In aula la rete può mancare o il modello essere spento, e la
+   * squadra deve avere comunque qualcosa su cui ragionare — è la promessa fatta
+   * a chi conduce nella pagina "Per chi conduce".
+   */
+  cardine?: string;
 }
 
 /** Estensioni/tipi accettati come allegato. */
@@ -32,9 +39,12 @@ export function AiTutor({
   context,
   suggestions = [],
   intro,
+  cardine,
 }: AiTutorProps) {
+  const aiOff = !isAiConfigured();
+  const apertura = aiOff && cardine ? cardine : intro;
   const [messages, setMessages] = useState<ChatMessage[]>(() =>
-    intro ? [{ role: 'assistant', content: intro }] : [],
+    apertura ? [{ role: 'assistant', content: apertura }] : [],
   );
   const [input, setInput] = useState('');
   const [pending, setPending] = useState<ChatAttachment[]>([]);
@@ -45,7 +55,7 @@ export function AiTutor({
   const [notice, setNotice] = useState<string | null>(
     isAiConfigured()
       ? null
-      : 'Tutor AI non ancora collegato: i moduli scientifici funzionano comunque.',
+      : 'Il tutor non è disponibile su questa postazione — tutto il resto funziona: osservate, confrontate e leggete come al solito.',
   );
   const listRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -62,13 +72,13 @@ export function AiTutor({
   // il primo messaggio deve seguire: altrimenti il tutor parla di ciò che non
   // c'è più. A conversazione avviata invece non si tocca nulla.
   useEffect(() => {
-    if (!intro) return;
+    if (!apertura) return;
     setMessages((prev) => {
       if (prev.some((m) => m.role === 'user')) return prev;
-      if (prev.length === 1 && prev[0].content === intro) return prev;
-      return [{ role: 'assistant', content: intro }];
+      if (prev.length === 1 && prev[0].content === apertura) return prev;
+      return [{ role: 'assistant', content: apertura }];
     });
-  }, [intro]);
+  }, [apertura]);
 
   // Legge i file scelti: immagini → data URL (ridotte a 1024px), testo → contenuto.
   async function onFiles(list: FileList | null) {
@@ -172,14 +182,20 @@ export function AiTutor({
   return (
     <div className="rounded-xl bg-ink text-paper p-5 flex flex-col">
       <div className="font-mono text-[10px] tracking-[.18em] uppercase text-[#e8935f] mb-3">
-        {title}
+        {aiOff && cardine ? 'Una domanda per voi' : title}
       </div>
 
       <div
         ref={listRef}
         className="flex-1 overflow-y-auto space-y-3 max-h-80 min-h-24 pr-1"
       >
-        {messages.length === 0 && (
+        {aiOff && cardine && (
+          <p className="text-[#8a7f73] text-[12px] italic">
+            Discutetene fra voi e scrivete la vostra risposta nel project work qui
+            sopra: è quella che conta per la giuria.
+          </p>
+        )}
+        {messages.length === 0 && !(aiOff && cardine) && (
           <p className="text-[#c9bfb4] text-sm italic">
             Scrivi una domanda, allega un file 📎, o scegli un suggerimento qui sotto.
           </p>

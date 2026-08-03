@@ -359,6 +359,7 @@ export function Compare({ onNavigate }: { onNavigate: (p: PageId) => void }) {
       <div className="mt-6">
         <AiTutor
           title="Il tutor interpreta il confronto"
+          cardine="Guardate dove le due sequenze non combaciano: sono differenze sparse o concentrate in un punto? Secondo voi una differenza cos\u00ec piccola pu\u00f2 bastare a cambiare la proteina, oppure serve molto di pi\u00f9?"
           context={aiContext}
           intro={`Ho allineato "${result.aLabel}" e "${result.bLabel}": combaciano al ${result.identityPct}%. Chiedimi cosa significano le differenze.`}
           suggestions={[
