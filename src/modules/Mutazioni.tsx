@@ -269,7 +269,7 @@ export function Mutazioni({ onNavigate }: { onNavigate: (p: PageId) => void }) {
       <div className="mt-6">
         <AiTutor
           title="Il tutor spiega la mutazione"
-          cardine="Confrontate la proteina originale con quella mutata: cosa \u00e8 cambiato davvero? Fra le mutazioni che avete provato, quale vi sembra la pi\u00f9 dannosa e perch\u00e9?"
+          cardine="Confrontate la proteina originale con quella mutata: cosa è cambiato davvero? Fra le mutazioni che avete provato, quale vi sembra la più dannosa e perché?"
           context={[
             SCREEN_BRIEFINGS.mutazioni,
             teamWritingContext(dossier, currentCase?.id, draft),

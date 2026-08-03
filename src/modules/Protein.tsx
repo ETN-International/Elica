@@ -1,24 +1,26 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { PageId } from '../App';
 import type { AlphaFoldModel } from '../types';
 import { useStore } from '../store';
 import {
   PageHeader,
-  Sub,
   Note,
   AddToDossierButton,
   NoCaseNotice,
   Stepper,
-  HowTo,
   Esercizio,
   ProjectWork,
   ProssimoPasso,
+  Fase,
+  CosaStaiGuardando,
 } from '../components/ui';
 import { AiTutor } from '../components/AiTutor';
 import { MolstarViewer, type MolstarApi } from '../components/MolstarViewer';
 import { fetchAlphaFoldModel, NoStructureError } from '../lib/alphafold';
 import { SCREEN_BRIEFINGS } from '../data/tutorBriefings';
 import { teamWritingContext } from '../lib/teamContext';
+import { LEGGERE_LA_3D } from '../data/guardare';
+import { askTutorProactive } from '../lib/ai';
 import {
   azioniDisponibili,
   residuoMutazione,
@@ -39,6 +41,34 @@ export function Protein({ onNavigate }: { onNavigate: (p: PageId) => void }) {
   const [viewer, setViewer] = useState<MolstarApi | null>(null);
   const [gira, setGira] = useState(false);
   const [ultimaSpiegazione, setUltimaSpiegazione] = useState<string | null>(null);
+  /** Quanti amminoacidi copre il tratto studiato: serve al conto della fase 4. */
+  const tratto = useMemo(
+    () => (currentCase ? residuiDelTratto(currentCase) : 0),
+    [currentCase],
+  );
+  // La risposta del tutor a quello che la squadra ha scritto: prima salvavano
+  // il project work e non rispondeva nessuno.
+  const [reazione, setReazione] = useState<string | null>(null);
+  /** Il contesto della schermata, aggiornato a ogni render: lo passiamo al
+   *  tutor quando reagisce, così commenta i dati veri e non a memoria. */
+  const aiContextRef = useRef('');
+  const [reazioneInCorso, setReazioneInCorso] = useState(false);
+
+  async function chiediReazione(testo: string) {
+    setReazioneInCorso(true);
+    try {
+      const r = await askTutorProactive({
+        phase: 'Modulo · La proteina in 3D',
+        teamInput: testo,
+        brief: aiContextRef.current,
+      });
+      if (r) setReazione(r);
+    } catch {
+      // Tutor non raggiungibile: il lavoro della squadra resta comunque salvato.
+    } finally {
+      setReazioneInCorso(false);
+    }
+  }
   const azioni = useMemo(
     () => azioniDisponibili(currentCase ?? null, model),
     [currentCase, model],
@@ -123,6 +153,7 @@ export function Protein({ onNavigate }: { onNavigate: (p: PageId) => void }) {
         .filter(Boolean)
         .join('\n')
     : `${SCREEN_BRIEFINGS.protein}\nCaso: ${currentCase.title}. Proteina: ${currentCase.protein.name} (UniProt ${currentCase.protein.uniprot}).`;
+  aiContextRef.current = aiContext;
 
   return (
     <div className="fade-up">
@@ -135,15 +166,6 @@ export function Protein({ onNavigate }: { onNavigate: (p: PageId) => void }) {
           </>
         }
         dek="Dalla sequenza, l'app recupera da AlphaFold DB la struttura 3D già calcolata e la mostra ruotabile. La struttura è vera; il tutor la racconta."
-      />
-
-      <HowTo
-        steps={[
-          'Trascina la proteina col mouse per ruotarla; usa la rotellina per lo zoom.',
-          'Osserva la forma: dove è compatta e stabile, come la forma crea la funzione.',
-          'Chiedi al tutor cosa stai guardando.',
-          'Aggiungi la proteina al dossier.',
-        ]}
       />
 
       {loading && (
@@ -182,23 +204,34 @@ export function Protein({ onNavigate }: { onNavigate: (p: PageId) => void }) {
 
       {model && !loading && (
         <>
-          <MolstarViewer
-            url={model.modelUrl}
-            format={model.format}
-            onReady={setViewer}
-          />
-          <p className="text-[13px] text-ink-muted mt-2">
-            Trascina con il mouse per ruotare · rotellina per lo zoom. Le stesse
-            strutture che usano i ricercatori.
-          </p>
+          {/* ── 1. Guardare, prima di ogni parola ─────────────────────── */}
+          <Fase
+            n={1}
+            titolo="Prima guardala"
+            perche={`Questa è ${currentCase.protein.name}, come l'hanno ricostruita i ricercatori. Non serve sapere nulla per cominciare: prendetela col mouse e giratela.`}
+          >
+            <MolstarViewer url={model.modelUrl} format={model.format} onReady={setViewer} />
+            <p className="text-[13px] text-ink-muted mt-2">
+              Trascina con il mouse per ruotare · rotellina per lo zoom.
+            </p>
+          </Fase>
 
-          {/* Azioni verificate: i punti che indicano li calcola l'app dai dati
-              veri, e compaiono solo se corrispondono a QUESTA proteina. */}
+          {/* ── 2. Ora la parola: cosa sono quelle forme ──────────────── */}
+          <Fase
+            n={2}
+            titolo="Che cosa hai davanti"
+            perche="L'avete girata e vi siete fatti un'idea. Adesso diamo un nome a quello che avete visto: senza queste parole, il resto resterebbe un disegno colorato."
+          >
+            <CosaStaiGuardando voci={LEGGERE_LA_3D.voci} cerca={LEGGERE_LA_3D.cerca} />
+          </Fase>
+
+          {/* ── 3. Solo ora ha senso indicare un punto preciso ────────── */}
           {viewer && azioni.length > 0 && (
-            <div className="rounded-xl border border-rule bg-white/40 px-5 py-4 mt-3">
-              <div className="font-mono text-[9.5px] tracking-[.18em] uppercase text-accent-3 mb-2.5">
-                🔍 Guarda più da vicino
-              </div>
+            <Fase
+              n={3}
+              titolo="Guarda più da vicino"
+              perche="Adesso che sapete che il nastro è una catena di amminoacidi, ha senso puntare il dito su un pezzo preciso. Dove puntare lo calcola l'app dai dati veri: nessuno se lo inventa."
+            >
               <div className="flex flex-wrap gap-2">
                 {azioni.map((az) => (
                   <button
@@ -214,55 +247,87 @@ export function Protein({ onNavigate }: { onNavigate: (p: PageId) => void }) {
                   </button>
                 ))}
               </div>
-              {ultimaSpiegazione && (
-                <p className="text-[13.5px] text-ink-light mt-3">{ultimaSpiegazione}</p>
+              {ultimaSpiegazione ? (
+                <p className="text-[14.5px] text-ink-light mt-3.5 border-l-2 border-accent pl-3">
+                  {ultimaSpiegazione}
+                </p>
+              ) : (
+                <p className="text-[13.5px] text-ink-muted mt-3">
+                  Premete un pulsante: la struttura si muove, e qui sotto compare
+                  cosa state guardando.
+                </p>
               )}
-            </div>
+            </Fase>
           )}
 
-          <Sub>La scheda della proteina</Sub>
-          <div className="grid sm:grid-cols-2 gap-x-8 gap-y-2 text-[14px]">
-            <Field label="Nome" value={model.proteinName ?? currentCase.protein.name} />
-            <Field label="UniProt ID" value={model.uniprot} />
-            {model.organism && <Field label="Organismo" value={model.organism} />}
-            {model.sequenceLength && (
-              <Field label="Lunghezza" value={`${model.sequenceLength} amminoacidi`} />
-            )}
-            <Field label="Fonte" value="AlphaFold DB (EMBL-EBI + DeepMind)" />
-            {model.modelVersion && (
-              <Field label="Versione modello" value={`v${model.modelVersion}`} />
-            )}
-          </div>
+          {/* ── 4. Un conto che non si può copiare ────────────────────── */}
+          {tratto > 0 && !!model.sequenceLength && tratto < model.sequenceLength && (
+            <Fase
+              n={4}
+              titolo="Fai tu un conto"
+              perche="Avete visto che il tratto studiato è solo una parte della proteina. Mettiamolo in numeri: è la differenza fra «mi sembra poco» e sapere quanto."
+            >
+              <Esercizio
+                consegna={`Il gene che state studiando copre ${tratto} amminoacidi, ma la proteina intera ne ha ${model.sequenceLength}. Che percentuale della proteina avete davanti? (numero intero)`}
+                expected={String(Math.round((tratto / model.sequenceLength) * 100))}
+                placeholder="es. 12"
+                explanation={`${tratto} diviso ${model.sequenceLength}, per cento, fa circa ${Math.round((tratto / model.sequenceLength) * 100)}%. Tutto il vostro lavoro riguarda questa fetta: il resto della proteina esiste, ma non lo state guardando.`}
+              />
+            </Fase>
+          )}
 
-          <Note label="La struttura è vera, non generata">
-            L'app non predice la forma della proteina: la <strong>scarica</strong> già
-            calcolata da AlphaFold DB — oltre 200 milioni di strutture, API pubblica e
-            gratuita. L'AI la racconta, non la inventa.
-          </Note>
-
-          {model.sequenceLength && (
-            <Esercizio
-              consegna="Quanti amminoacidi ha questa proteina? (lo trovi nella scheda qui sopra)"
-              expected={String(model.sequenceLength)}
-              placeholder="scrivi un numero"
-              explanation={`Questa proteina è lunga ${model.sequenceLength} amminoacidi: è la catena che, ripiegandosi, forma la struttura 3D che vedi.`}
+          {/* ── 5. Scrivere, e ricevere una risposta vera ─────────────── */}
+          <Fase
+            n={5}
+            titolo="Scrivi cosa hai capito"
+            perche="Guardare non basta: quello che resta è ciò che riuscite a dire con parole vostre. Salvate, e il tutor vi risponde davvero."
+          >
+            <ProjectWork
+              onDraft={setDraft}
+              consegna="Descrivete la forma che avete davanti: è raggomitolata e compatta o lunga e distesa? Prevalgono le spirali o i nastri piatti? E secondo voi quella forma a cosa serve?"
+              onSave={(txt) => {
+                addEntry({
+                  kind: 'proteina',
+                  title: `Project work · Struttura di ${model.proteinName ?? currentCase.protein.name}`,
+                  body: txt,
+                  data: { uniprot: model.uniprot },
+                });
+                chiediReazione(txt);
+              }}
             />
-          )}
+            {reazioneInCorso && (
+              <p className="text-[13.5px] text-ink-muted italic mt-2">
+                Il tutor sta leggendo quello che avete scritto…
+              </p>
+            )}
+          </Fase>
 
-          <ProjectWork
-            onDraft={setDraft}
-            consegna="Ruotate la proteina e descrivetela: è compatta (globulare) o allungata? Dove sembra più stabile? Collegate la forma alla sua funzione."
-            onSave={(txt) =>
-              addEntry({
-                kind: 'proteina',
-                title: `Project work · Struttura di ${model.proteinName ?? currentCase.protein.name}`,
-                body: txt,
-                data: { uniprot: model.uniprot },
-              })
-            }
-          />
+          {/* ── 6. Il tutor: risponde al loro testo e alle loro domande ── */}
+          <Fase
+            n={6}
+            titolo="Parlane con il tutor"
+            perche="Qui trovate la sua risposta a quello che avete scritto, e potete chiedergli tutto il resto. Conosce i dati di questa schermata."
+          >
+            <AiTutor
+              title="Il tutor racconta la struttura"
+              cardine="Guardate la forma girandola: dov'è più compatta e dove sembra più esposta? Secondo voi la parte compatta tiene insieme il resto — e se cambiasse, la proteina reggerebbe lo stesso?"
+              context={aiContext}
+              reazione={reazione ?? undefined}
+              intro="Chiedimi quello che vuoi su ciò che stai guardando: cosa sono le spirali, perché la forma conta, dove sono le parti più stabili."
+              suggestions={[
+                'Perché si ripiega proprio così?',
+                'A cosa serve questa forma?',
+                'Cosa succede se cambia un amminoacido?',
+              ]}
+            />
+          </Fase>
 
-          <div className="mt-4 flex flex-wrap gap-3 items-center">
+          {/* ── 7. Mettere via il risultato ───────────────────────────── */}
+          <Fase
+            n={7}
+            titolo="Metti la proteina nel dossier"
+            perche="Il dossier è il racconto che presenterete alla giuria: ogni cosa che salvate ne diventa una tappa."
+          >
             <AddToDossierButton
               onAdd={() =>
                 addEntry({
@@ -279,23 +344,32 @@ export function Protein({ onNavigate }: { onNavigate: (p: PageId) => void }) {
                 })
               }
             />
-          </div>
+
+            {/* Riferimento, fuori dal percorso: chi vuole i numeri li apre. */}
+            <details className="mt-4 rounded-lg border border-rule bg-white/30 px-4 py-3">
+              <summary className="cursor-pointer text-[13.5px] text-ink-light">
+                Da dove viene questa struttura (per i curiosi)
+              </summary>
+              <div className="grid sm:grid-cols-2 gap-x-8 gap-y-1.5 text-[13.5px] mt-3">
+                <Field label="Nome" value={model.proteinName ?? currentCase.protein.name} />
+                <Field label="UniProt ID" value={model.uniprot} />
+                {model.organism && <Field label="Organismo" value={model.organism} />}
+                {model.sequenceLength && (
+                  <Field label="Lunghezza" value={`${model.sequenceLength} amminoacidi`} />
+                )}
+                <Field label="Fonte" value="AlphaFold DB (EMBL-EBI + DeepMind)" />
+                {model.modelVersion && (
+                  <Field label="Versione" value={`v${model.modelVersion}`} />
+                )}
+              </div>
+              <p className="text-[13px] text-ink-muted mt-3">
+                L'app non predice la forma: la <strong>scarica</strong> già calcolata da
+                AlphaFold DB. L'AI la racconta, non la inventa.
+              </p>
+            </details>
+          </Fase>
         </>
       )}
-
-      <div className="mt-6">
-        <AiTutor
-          title="Il tutor racconta la struttura"
-          cardine="Guardate la forma girandola: dov\u2019\u00e8 pi\u00f9 compatta e dove sembra pi\u00f9 esposta? Secondo voi la parte compatta serve a tenere insieme il resto \u2014 e se cambiasse, la proteina reggerebbe lo stesso?"
-          context={aiContext}
-          intro="Ruota la proteina col mouse. Chiedimi cosa stai guardando: dove sono le parti stabili, come la forma determina la funzione."
-          suggestions={[
-            'Cosa sto guardando?',
-            'Come la forma determina la funzione?',
-            'Dove sono le parti stabili?',
-          ]}
-        />
-      </div>
 
       <ProssimoPasso
         fatto="Avete guardato la forma della proteina."

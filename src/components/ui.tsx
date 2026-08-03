@@ -106,6 +106,76 @@ export function HowTo({ steps }: { steps: string[] }) {
 }
 
 /**
+ * Un passo del modulo, numerato, con il motivo per cui viene DOPO il precedente.
+ *
+ * È il filo causale che prima mancava: le schermate erano un mucchio di riquadri
+ * (guarda, esercizio, project work, tutor) messi uno sotto l'altro senza che
+ * nulla dicesse perché quell'ordine. Una squadra senza basi si perdeva
+ * esattamente lì: sapeva cosa c'era, non cosa stesse facendo.
+ */
+export function Fase({
+  n,
+  titolo,
+  perche,
+  children,
+}: {
+  n: number;
+  titolo: string;
+  /** Il legame con il passo precedente: "avete visto X, quindi ora Y". */
+  perche: string;
+  children: ReactNode;
+}) {
+  return (
+    <section className="mt-9 first:mt-6">
+      <div className="flex items-baseline gap-3 border-t border-rule pt-4">
+        <span className="font-serif text-3xl text-accent leading-none">{n}</span>
+        <div>
+          <h2 className="font-serif text-2xl text-ink leading-tight">{titolo}</h2>
+          <p className="text-[14.5px] text-ink-light mt-1">{perche}</p>
+        </div>
+      </div>
+      <div className="mt-4">{children}</div>
+    </section>
+  );
+}
+
+/**
+ * "Che cosa stai guardando": la spiegazione teorica ancorata a ciò che è sullo
+ * schermo in quel momento, seguita da una cosa da cercare con gli occhi.
+ *
+ * Mancava del tutto: la squadra vedeva nastri e spirali colorate senza che
+ * nessuno le dicesse mai che cosa fossero.
+ */
+export function CosaStaiGuardando({
+  voci,
+  cerca,
+}: {
+  /** Termine + spiegazione, riferiti a ciò che si vede adesso. */
+  voci: { termine: string; spiegazione: string }[];
+  /** L'osservazione da fare subito, per non restare passivi. */
+  cerca: string;
+}) {
+  return (
+    <div className="rounded-xl border border-accent-2/30 bg-[rgba(26,107,82,.05)] px-5 py-4">
+      <div className="font-mono text-[9.5px] tracking-[.18em] uppercase text-accent-2 mb-3">
+        📖 Che cosa stai guardando
+      </div>
+      <dl className="space-y-2.5">
+        {voci.map((v) => (
+          <div key={v.termine}>
+            <dt className="font-serif text-[17px] text-ink inline">{v.termine}</dt>
+            <dd className="text-[14.5px] text-ink-light inline"> — {v.spiegazione}</dd>
+          </div>
+        ))}
+      </dl>
+      <p className="text-[14.5px] text-ink mt-3.5 pt-3 border-t border-accent-2/20">
+        <strong>👀 Cerca nella tua:</strong> {cerca}
+      </p>
+    </div>
+  );
+}
+
+/**
  * Il cartello "e adesso?" in fondo a ogni schermata di lavoro.
  *
  * Per una squadra senza basi il punto più fragile non è capire la biologia: è

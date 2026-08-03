@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useRef } from 'react';
 import type { PageId } from '../App';
 import { useStore } from '../store';
 import {
@@ -7,10 +7,11 @@ import {
   AddToDossierButton,
   Stat,
   Stepper,
-  HowTo,
   Esercizio,
   ProjectWork,
   ProssimoPasso,
+  Fase,
+  CosaStaiGuardando,
 } from '../components/ui';
 import { AiTutor } from '../components/AiTutor';
 import {
@@ -23,11 +24,33 @@ import {
   translateCodon,
 } from '../lib/dna';
 import { SCREEN_BRIEFINGS } from '../data/tutorBriefings';
+import { LEGGERE_CODONI } from '../data/guardare';
+import { askTutorProactive } from '../lib/ai';
 import { teamWritingContext } from '../lib/teamContext';
 
 export function ReadDna({ onNavigate }: { onNavigate: (p: PageId) => void }) {
   const { currentCase, addEntry, dossier } = useStore();
   const [draft, setDraft] = useState('');
+  // La risposta del tutor a quello che la squadra scrive nel project work.
+  const [reazione, setReazione] = useState<string | null>(null);
+  const [reazioneInCorso, setReazioneInCorso] = useState(false);
+  const aiContextRef = useRef('');
+
+  async function chiediReazione(testo: string) {
+    setReazioneInCorso(true);
+    try {
+      const r = await askTutorProactive({
+        phase: 'Modulo · Leggere il DNA',
+        teamInput: testo,
+        brief: aiContextRef.current,
+      });
+      if (r) setReazione(r);
+    } catch {
+      // Tutor non raggiungibile: il lavoro resta comunque salvato.
+    } finally {
+      setReazioneInCorso(false);
+    }
+  }
   const [selected, setSelected] = useState(0);
 
   const seq = currentCase?.sequences[selected] ?? currentCase?.sequences[0];
@@ -78,6 +101,7 @@ export function ReadDna({ onNavigate }: { onNavigate: (p: PageId) => void }) {
   ]
     .filter(Boolean)
     .join('\n');
+  aiContextRef.current = aiContext;
 
   return (
     <div className="fade-up">
@@ -90,15 +114,6 @@ export function ReadDna({ onNavigate }: { onNavigate: (p: PageId) => void }) {
           </>
         }
         dek="Scegli una sequenza del caso, guardala in modo leggibile e falla spiegare al tutor. Nessun file da capire, nessun upload."
-      />
-
-      <HowTo
-        steps={[
-          'Scegli quale sequenza guardare (i pulsanti qui sotto).',
-          'Controlla che il dato sia buono: gli indicatori devono essere verdi.',
-          'Leggila codone per codone e chiedi al tutor cosa significa.',
-          'Quando hai capito, premi «Aggiungi al dossier».',
-        ]}
       />
 
       <div className="flex flex-wrap gap-2 mb-4">
@@ -124,7 +139,12 @@ export function ReadDna({ onNavigate }: { onNavigate: (p: PageId) => void }) {
         <Stat value={`${protein.replace(/\*/g, '').length}`} label="amminoacidi" />
       </div>
 
-      <Sub>Prima di tutto: il dato è buono?</Sub>
+      <Fase
+        n={1}
+        titolo="Prima: di questo dato ci si può fidare?"
+        perche="In scienza non si lavora su un dato prima di averlo controllato. È il primo gesto di ogni ricercatore, e lo fate anche voi."
+      >
+      <Sub>Il controllo qualità</Sub>
       <p className="text-[14px] mb-3">
         In scienza non ci si fida di un dato prima di averlo verificato. Ecco un
         controllo qualità veloce della sequenza — verde se va bene, rosso se c'è
@@ -159,6 +179,13 @@ export function ReadDna({ onNavigate }: { onNavigate: (p: PageId) => void }) {
           : '→ Qualche indicatore è rosso: chiedi al tutor cosa comporta prima di proseguire.'}
       </p>
 
+      </Fase>
+
+      <Fase
+        n={2}
+        titolo="Ora leggi il gene"
+        perche="Il dato è buono, quindi si può leggere. Qui sotto la sequenza è già divisa nei gruppi con cui la legge la cellula."
+      >
       <Sub>La sequenza, codone per codone</Sub>
       <p className="text-[14px] mb-3">
         Ogni tripletta di basi (un <strong>codone</strong>) codifica un amminoacido.
@@ -197,27 +224,63 @@ export function ReadDna({ onNavigate }: { onNavigate: (p: PageId) => void }) {
         <span className="font-mono text-ink-light">{protein}</span>
       </p>
 
+      </Fase>
+
+      <Fase
+        n={3}
+        titolo="Che cosa hai davanti"
+        perche="Avete visto blocchi di tre lettere con una sigla sotto. Ecco che cosa sono: senza questo, restano lettere colorate."
+      >
+        <CosaStaiGuardando voci={LEGGERE_CODONI.voci} cerca={LEGGERE_CODONI.cerca} />
+      </Fase>
+
+      <Fase
+        n={4}
+        titolo="Fai tu un conto"
+        perche="Avete visto la regola all'opera su questa sequenza. Provate ad applicarla a un gene qualsiasi: è così che si capisce se una regola è stata capita."
+      >
+      {/* La regola, non il numero già a schermo: si applica a una sequenza
+          diversa da quella che hanno davanti. */}
       <Esercizio
-        consegna="Conta gli amminoacidi che questa sequenza produce (lo STOP non conta come amminoacido)."
-        expected={String(protein.replace(/\*/g, '').length)}
-        placeholder="es. 26"
-        explanation={`La sequenza ha ${codons.length} codoni e produce ${protein.replace(/\*/g, '').length} amminoacidi. Ogni tripletta = un amminoacido.`}
+        consegna="Avete visto la regola: tre lettere di DNA producono un amminoacido. Allora un gene lungo 150 basi quanti amminoacidi produce?"
+        expected="50"
+        placeholder="scrivi un numero"
+        explanation="150 diviso 3 fa 50. È la regola che vale per ogni gene: la lunghezza del DNA divisa per tre dà il numero di amminoacidi — ecco perché togliere una sola lettera manda tutto fuori sincrono."
       />
 
+      </Fase>
+
+      <Fase
+        n={5}
+        titolo="Scrivi cosa hai capito"
+        perche="Avete letto il gene: adesso spiegate cosa costruisce, con parole vostre. Salvate e il tutor vi risponde."
+      >
       <ProjectWork
         onDraft={setDraft}
         consegna={`Con parole vostre: cosa codifica "${seq.label}" e perché è importante? Guardate la traduzione e chiedete al tutor.`}
-        onSave={(txt) =>
+        onSave={(txt) => {
           addEntry({
             kind: 'dna',
             title: `Project work · Lettura di ${seq.label}`,
             body: txt,
             data: { label: seq.label, dna, gc },
-          })
-        }
+          });
+          chiediReazione(txt);
+        }}
       />
+      {reazioneInCorso && (
+        <p className="text-[13.5px] text-ink-muted italic mt-2">
+          Il tutor sta leggendo quello che avete scritto…
+        </p>
+      )}
+      </Fase>
 
-      <div className="mt-5 flex flex-wrap gap-3 items-center">
+      <Fase
+        n={6}
+        titolo="Parlane con il tutor"
+        perche="Qui trovate la sua risposta a quello che avete scritto. Ha davanti la sequenza tradotta e i controlli di qualità."
+      >
+      <div className="mt-0 flex flex-wrap gap-3 items-center">
         <AddToDossierButton
           onAdd={() =>
             addEntry({
@@ -241,7 +304,8 @@ export function ReadDna({ onNavigate }: { onNavigate: (p: PageId) => void }) {
       <div className="mt-6">
         <AiTutor
           title="Il tutor spiega la sequenza"
-          cardine="Contate i codoni e guardate la proteina che ne esce: quante lettere di DNA servono per un solo amminoacido? E cosa succederebbe se ne togliessimo una sola dall\u2019inizio?"
+          reazione={reazione ?? undefined}
+          cardine="Contate i codoni e guardate la proteina che ne esce: quante lettere di DNA servono per un solo amminoacido? E cosa succederebbe se ne togliessimo una sola dall’inizio?"
           context={aiContext}
           intro={`Stai guardando "${seq.label}". Chiedimi cosa codifica questo gene, cosa cercare, o cosa significano i codoni.`}
           suggestions={[
@@ -251,6 +315,8 @@ export function ReadDna({ onNavigate }: { onNavigate: (p: PageId) => void }) {
           ]}
         />
       </div>
+
+      </Fase>
 
       <ProssimoPasso
         fatto="Avete letto il gene codone per codone."

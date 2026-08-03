@@ -1,22 +1,24 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useRef } from 'react';
 import type { PageId } from '../App';
 import { useStore } from '../store';
 import {
   PageHeader,
   Sub,
-  Note,
   Stat,
   AddToDossierButton,
   NoCaseNotice,
   Stepper,
-  HowTo,
   Esercizio,
   ProjectWork,
   ProssimoPasso,
+  Fase,
+  CosaStaiGuardando,
 } from '../components/ui';
 import { AiTutor } from '../components/AiTutor';
 import { alignSequences, describeDifferences, MAX_SEQ_LENGTH } from '../lib/alignment';
 import { SCREEN_BRIEFINGS } from '../data/tutorBriefings';
+import { LEGGERE_ALLINEAMENTO } from '../data/guardare';
+import { askTutorProactive } from '../lib/ai';
 import { teamWritingContext } from '../lib/teamContext';
 
 const ROW = 45; // basi per riga nella visualizzazione allineata
@@ -24,6 +26,26 @@ const ROW = 45; // basi per riga nella visualizzazione allineata
 export function Compare({ onNavigate }: { onNavigate: (p: PageId) => void }) {
   const { currentCase, addEntry, dossier } = useStore();
   const [draft, setDraft] = useState('');
+  // La risposta del tutor a quello che la squadra scrive nel project work.
+  const [reazione, setReazione] = useState<string | null>(null);
+  const [reazioneInCorso, setReazioneInCorso] = useState(false);
+  const aiContextRef = useRef('');
+
+  async function chiediReazione(testo: string) {
+    setReazioneInCorso(true);
+    try {
+      const r = await askTutorProactive({
+        phase: 'Modulo · Confronto fra due geni',
+        teamInput: testo,
+        brief: aiContextRef.current,
+      });
+      if (r) setReazione(r);
+    } catch {
+      // Tutor non raggiungibile: il lavoro resta comunque salvato.
+    } finally {
+      setReazioneInCorso(false);
+    }
+  }
 
   const a = currentCase?.sequences[0];
   const b = currentCase?.sequences[1];
@@ -102,6 +124,11 @@ export function Compare({ onNavigate }: { onNavigate: (p: PageId) => void }) {
     });
   }
 
+  // Quante differenze cambiano davvero un amminoacido (le altre sono silenti).
+  const amminoacidiCambiati = differences.filter(
+    (d) => d.kind === 'sostituzione' && d.fromAA && d.toAA && d.fromAA !== d.toAA,
+  ).length;
+
   const aiContext = [
     SCREEN_BRIEFINGS.compare,
     teamWritingContext(dossier, currentCase?.id, draft),
@@ -123,6 +150,7 @@ export function Compare({ onNavigate }: { onNavigate: (p: PageId) => void }) {
   ]
     .filter(Boolean)
     .join('\n');
+  aiContextRef.current = aiContext;
 
   return (
     <div className="fade-up">
@@ -137,16 +165,12 @@ export function Compare({ onNavigate }: { onNavigate: (p: PageId) => void }) {
         dek="L'app allinea le due sequenze con un algoritmo vero e le colora: verde dove combaciano, rosso dove differiscono. L'AI interpreta cosa significa."
       />
 
-      <HowTo
-        steps={[
-          'Guarda l\'allineamento: verde dove le sequenze combaciano, rosso dove cambiano.',
-          'Leggi il riquadro «La scoperta»: qual è la differenza e cosa comporta.',
-          'Chiedi al tutor perché quella differenza conta.',
-          'Aggiungi il confronto al dossier.',
-        ]}
-      />
-
-      <div className="flex flex-wrap gap-6 border-t border-rule pt-4 mb-4">
+      <Fase
+        n={1}
+        titolo="Guarda dove i due geni non combaciano"
+        perche="L'app ha allineato le due sequenze con lo stesso algoritmo che usano i ricercatori. Verde dove sono uguali, rosso dove cambiano: cominciate da qui, senza leggere altro."
+      >
+      <div className="flex flex-wrap gap-6 border-t-0 pt-0 mb-4">
         <Stat value={`${result.identityPct}%`} label="identità" />
         <Stat value={result.identicalCount} label="basi uguali" />
         <Stat value={result.mismatches} label="basi diverse" />
@@ -203,8 +227,26 @@ export function Compare({ onNavigate }: { onNavigate: (p: PageId) => void }) {
         </div>
       </div>
 
+      </Fase>
+
+      <Fase
+        n={2}
+        titolo="Che cosa hai davanti"
+        perche="Avete visto colori e barrette. Adesso il significato: senza queste quattro parole l'allineamento resta un disegno."
+      >
+        <CosaStaiGuardando
+          voci={LEGGERE_ALLINEAMENTO.voci}
+          cerca={LEGGERE_ALLINEAMENTO.cerca}
+        />
+      </Fase>
+
       {differences.length > 0 && (
-        <div className="rounded-xl bg-ink text-paper px-7 py-6 mt-6">
+        <Fase
+          n={3}
+          titolo="La scoperta"
+          perche="Ora che sapete leggere l'allineamento, ecco cosa comporta davvero quel punto rosso: l'app calcola l'effetto sulla proteina, senza inventare nulla."
+        >
+        <div className="rounded-xl bg-ink text-paper px-7 py-6 mt-0">
           <div className="font-mono text-[10px] tracking-[.2em] uppercase text-[#e8935f] mb-3">
             La scoperta · {differences.length}{' '}
             {differences.length === 1 ? 'differenza che conta' : 'differenze che contano'}
@@ -303,36 +345,60 @@ export function Compare({ onNavigate }: { onNavigate: (p: PageId) => void }) {
             tutor perché questa differenza conta.
           </p>
         </div>
+        </Fase>
       )}
 
-      <Note label="La regola d'oro">
-        L'allineamento qui sopra è calcolato da una <strong>libreria di bioinformatica</strong>,
-        non dall'AI. Il tutor riceve questo risultato già pronto e lo{' '}
-        <em>commenta</em>: cosa raccontano le differenze? Questi due geni sono parenti
-        stretti o lontani?
-      </Note>
-
+      <Fase
+        n={4}
+        titolo="Fai tu un conto"
+        perche="Il DNA è cambiato, l'avete visto. Ma cambiare una lettera del DNA non significa automaticamente cambiare la proteina: verificatelo."
+      >
+      {/* Non "copia il numero qui sopra": qui bisogna capire che una lettera
+          cambiata nel DNA non sempre cambia la proteina. */}
       <Esercizio
-        consegna="Guarda le statistiche qui sopra: quante posizioni differiscono in tutto? (basi diverse + gap)"
-        expected={String(result.mismatches + result.gaps)}
+        consegna={`Nell'allineamento ci sono ${result.mismatches} lettere diverse. Ma quanti AMMINOACIDI cambiano davvero nella proteina? (guardate le differenze qui sotto e contate solo quelle che cambiano amminoacido)`}
+        expected={String(amminoacidiCambiati)}
         placeholder="scrivi un numero"
-        explanation={`Le sequenze combaciano al ${result.identityPct}%: ${result.mismatches} basi diverse + ${result.gaps} gap = ${result.mismatches + result.gaps} posizioni differenti.`}
+        explanation={
+          amminoacidiCambiati === result.mismatches
+            ? `${amminoacidiCambiati}: qui ogni lettera cambiata cambia anche l'amminoacido. Ma non è sempre così — capita che il DNA cambi e la proteina resti identica.`
+            : `Solo ${amminoacidiCambiati} su ${result.mismatches}. Il codice genetico è ridondante: certe lettere possono cambiare senza che l'amminoacido cambi. Sono le mutazioni silenti.`
+        }
       />
 
+      </Fase>
+
+      <Fase
+        n={5}
+        titolo="Scrivi cosa hai capito"
+        perche="Avete i dati; ora serve la vostra interpretazione. Salvate: il tutor legge quello che scrivete e vi risponde."
+      >
       <ProjectWork
         onDraft={setDraft}
         consegna="Interpretate la scoperta: cosa comporta la differenza trovata? Questi due geni sono parenti stretti o lontani? Motivate."
-        onSave={(txt) =>
+        onSave={(txt) => {
           addEntry({
             kind: 'confronto',
             title: `Project work · Interpretazione del confronto`,
             body: txt,
             data: { identityPct: result.identityPct, mismatches: result.mismatches },
-          })
-        }
+          });
+          chiediReazione(txt);
+        }}
       />
+      {reazioneInCorso && (
+        <p className="text-[13.5px] text-ink-muted italic mt-2">
+          Il tutor sta leggendo quello che avete scritto…
+        </p>
+      )}
+      </Fase>
 
-      <div className="mt-4 flex flex-wrap gap-3 items-center">
+      <Fase
+        n={6}
+        titolo="Parlane con il tutor"
+        perche="Trovate qui la sua risposta a quello che avete scritto, e potete chiedergli il resto. Ha davanti l'allineamento calcolato."
+      >
+      <div className="mt-0 flex flex-wrap gap-3 items-center">
         <AddToDossierButton
           onAdd={() =>
             addEntry({
@@ -359,7 +425,8 @@ export function Compare({ onNavigate }: { onNavigate: (p: PageId) => void }) {
       <div className="mt-6">
         <AiTutor
           title="Il tutor interpreta il confronto"
-          cardine="Guardate dove le due sequenze non combaciano: sono differenze sparse o concentrate in un punto? Secondo voi una differenza cos\u00ec piccola pu\u00f2 bastare a cambiare la proteina, oppure serve molto di pi\u00f9?"
+          reazione={reazione ?? undefined}
+          cardine="Guardate dove le due sequenze non combaciano: sono differenze sparse o concentrate in un punto? Secondo voi una differenza così piccola può bastare a cambiare la proteina, oppure serve molto di più?"
           context={aiContext}
           intro={`Ho allineato "${result.aLabel}" e "${result.bLabel}": combaciano al ${result.identityPct}%. Chiedimi cosa significano le differenze.`}
           suggestions={[
@@ -369,6 +436,8 @@ export function Compare({ onNavigate }: { onNavigate: (p: PageId) => void }) {
           ]}
         />
       </div>
+
+      </Fase>
 
       <ProssimoPasso
         fatto="Avete trovato dove i due geni differiscono."

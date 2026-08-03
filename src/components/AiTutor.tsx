@@ -21,6 +21,13 @@ interface AiTutorProps {
    * a chi conduce nella pagina "Per chi conduce".
    */
   cardine?: string;
+  /**
+   * Una reazione del tutor da inserire nella conversazione, decisa dal modulo
+   * (per esempio quando la squadra salva il proprio project work). Serve perché
+   * prima scrivevano, salvavano, e non rispondeva nessuno: il testo cadeva nel
+   * vuoto. Quando questo valore cambia, il messaggio si aggiunge alla chat.
+   */
+  reazione?: string;
 }
 
 /** Estensioni/tipi accettati come allegato. */
@@ -40,6 +47,7 @@ export function AiTutor({
   suggestions = [],
   intro,
   cardine,
+  reazione,
 }: AiTutorProps) {
   const aiOff = !isAiConfigured();
   const apertura = aiOff && cardine ? cardine : intro;
@@ -79,6 +87,17 @@ export function AiTutor({
       return [{ role: 'assistant', content: apertura }];
     });
   }, [apertura]);
+
+  // Il tutor reagisce a qualcosa che la squadra ha appena fatto fuori dalla chat.
+  const ultimaReazione = useRef<string | undefined>(undefined);
+  useEffect(() => {
+    if (!reazione || reazione === ultimaReazione.current) return;
+    ultimaReazione.current = reazione;
+    setMessages((prev) => [...prev, { role: 'assistant', content: reazione }]);
+    requestAnimationFrame(() => {
+      listRef.current?.scrollTo(0, listRef.current.scrollHeight);
+    });
+  }, [reazione]);
 
   // Legge i file scelti: immagini → data URL (ridotte a 1024px), testo → contenuto.
   async function onFiles(list: FileList | null) {

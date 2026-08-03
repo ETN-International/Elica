@@ -330,6 +330,7 @@ async function askProxy(opts: AskAiOptions): Promise<string> {
  * allora la domanda-cardine di riserva.
  */
 export async function askTutorProactive(opts: {
+  /** Dove siamo: "Giorno 0 · Fase A", "Modulo · Proteina 3D"… */
   phase: string;
   teamInput: string;
   /** Scheda della schermata/fase (cosa è, cosa fanno, il tuo ruolo qui). */
@@ -338,7 +339,7 @@ export async function askTutorProactive(opts: {
 }): Promise<string> {
   const context = [
     opts.brief,
-    `Giorno 0 — ${opts.phase}`,
+    `Dove siamo: ${opts.phase}`,
     `La squadra ha appena scritto: "${opts.teamInput || '(ancora nulla)'}"`,
   ]
     .filter(Boolean)
