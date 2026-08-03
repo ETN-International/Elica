@@ -83,6 +83,7 @@ export async function fetchAlphaFoldModel(
     proteinName: entry.uniprotDescription,
     organism: entry.organismScientificName,
     sequenceLength: entry.uniprotSequence?.length,
+    sequence: entry.uniprotSequence,
     modelVersion: entry.latestVersion?.toString(),
   };
 }

@@ -1,10 +1,28 @@
 import { useEffect, useRef, useState } from 'react';
 import 'molstar/lib/mol-plugin-ui/skin/light.scss';
 
+/**
+ * Le poche cose che si possono chiedere alla struttura dall'esterno.
+ *
+ * Volutamente minime: chi le chiama passa NUMERI DI RESIDUO, non "cerca il sito
+ * attivo". Il quale residuo lo decide sempre il codice dell'app a partire dai
+ * dati veri — mai il tutor AI, che sceglie solo se proporre l'azione.
+ */
+export interface MolstarApi {
+  /** Inquadra ed evidenzia i residui da..a (numerazione della proteina, 1-based). */
+  focusResidues: (from: number, to: number) => void;
+  /** Torna alla vista d'insieme e toglie le evidenziazioni. */
+  reset: () => void;
+  /** Fa ruotare (o ferma) la struttura. */
+  spin: (on: boolean) => void;
+}
+
 interface MolstarViewerProps {
   /** URL del file di coordinate (da AlphaFold DB). */
   url: string;
   format: 'pdb' | 'mmcif';
+  /** Consegna l'API quando la struttura è pronta (null quando si smonta). */
+  onReady?: (api: MolstarApi | null) => void;
 }
 
 /**
@@ -12,7 +30,9 @@ interface MolstarViewerProps {
  * AlphaFold DB e RCSB PDB). Carica una struttura VERA da un URL e la mostra
  * ruotabile col mouse. L'app non calcola nulla: mostra ciò che ha scaricato.
  */
-export function MolstarViewer({ url, format }: MolstarViewerProps) {
+export function MolstarViewer({ url, format, onReady }: MolstarViewerProps) {
+  const onReadyRef = useRef(onReady);
+  onReadyRef.current = onReady;
   const parentRef = useRef<HTMLDivElement>(null);
   // Il plugin di Mol* non ha un tipo esportato comodo: usiamo `unknown` + guardie.
   const pluginRef = useRef<{ dispose: () => void } | null>(null);
@@ -75,7 +95,70 @@ export function MolstarViewer({ url, format }: MolstarViewerProps) {
           trajectory,
           'default',
         );
-        if (!disposed) setLoading(false);
+        if (disposed) return;
+        setLoading(false);
+
+        // ── API verso l'esterno ───────────────────────────────────────────
+        // Import dinamici: restano nel chunk di Mol*, già caricato a questo punto.
+        const [{ Script }, { StructureSelection }] = await Promise.all([
+          import('molstar/lib/mol-script/script'),
+          import('molstar/lib/mol-model/structure'),
+        ]);
+        if (disposed) return;
+
+        /** La struttura attualmente caricata (serve per costruire le selezioni). */
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const strutturaCorrente = (): any =>
+          plugin.managers.structure.hierarchy.current.structures[0]?.cell.obj?.data;
+
+        const api: MolstarApi = {
+          focusResidues(from, to) {
+            try {
+              const data = strutturaCorrente();
+              if (!data) return;
+              const sel = Script.getStructureSelection(
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                (Q: any) =>
+                  Q.struct.generator.atomGroups({
+                    'residue-test': Q.core.rel.inRange([
+                      Q.struct.atomProperty.macromolecular.label_seq_id(),
+                      from,
+                      to,
+                    ]),
+                  }),
+                data,
+              );
+              const loci = StructureSelection.toLociWithSourceUnits(sel);
+              plugin.managers.interactivity.lociSelects.deselectAll();
+              plugin.managers.interactivity.lociSelects.selectOnly({ loci });
+              plugin.managers.camera.focusLoci(loci);
+            } catch {
+              /* una struttura senza quei residui non deve rompere la pagina */
+            }
+          },
+          reset() {
+            try {
+              plugin.managers.interactivity.lociSelects.deselectAll();
+              plugin.managers.camera.reset();
+            } catch {
+              /* ignora */
+            }
+          },
+          spin(on) {
+            try {
+              plugin.canvas3d?.setProps({
+                trackball: {
+                  animate: on
+                    ? { name: 'spin', params: { speed: 0.6 } }
+                    : { name: 'off', params: {} },
+                },
+              });
+            } catch {
+              /* ignora */
+            }
+          },
+        };
+        onReadyRef.current?.(api);
       } catch (err) {
         if (!disposed) {
           setError(
@@ -88,6 +171,7 @@ export function MolstarViewer({ url, format }: MolstarViewerProps) {
 
     return () => {
       disposed = true;
+      onReadyRef.current?.(null);
       if (pluginRef.current) {
         pluginRef.current.dispose();
         pluginRef.current = null;

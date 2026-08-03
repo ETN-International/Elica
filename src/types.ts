@@ -56,6 +56,13 @@ export interface AlphaFoldModel {
   organism?: string;
   sequenceLength?: number;
   modelVersion?: string;
+  /**
+   * La sequenza amminoacidica VERA della proteina, come sta su UniProt.
+   * Serve a verificare, prima di indicare un punto sulla struttura, che il
+   * tratto didattico corrisponda davvero a questa proteina: senza il controllo
+   * l'app punterebbe il residuo sbagliato (succede con l'estratto della CFTR).
+   */
+  sequence?: string;
 }
 
 /** Risultato di un allineamento tra due sequenze (calcolato da libreria, non dall'AI). */

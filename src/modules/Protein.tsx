@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { PageId } from '../App';
 import type { AlphaFoldModel } from '../types';
 import { useStore } from '../store';
@@ -15,10 +15,16 @@ import {
   ProssimoPasso,
 } from '../components/ui';
 import { AiTutor } from '../components/AiTutor';
-import { MolstarViewer } from '../components/MolstarViewer';
+import { MolstarViewer, type MolstarApi } from '../components/MolstarViewer';
 import { fetchAlphaFoldModel, NoStructureError } from '../lib/alphafold';
 import { SCREEN_BRIEFINGS } from '../data/tutorBriefings';
 import { teamWritingContext } from '../lib/teamContext';
+import {
+  azioniDisponibili,
+  residuoMutazione,
+  residuiDelTratto,
+  type Azione3D,
+} from '../lib/azioni3d';
 
 export function Protein({ onNavigate }: { onNavigate: (p: PageId) => void }) {
   const { currentCase, addEntry, dossier } = useStore();
@@ -28,6 +34,44 @@ export function Protein({ onNavigate }: { onNavigate: (p: PageId) => void }) {
   /** true quando AlphaFold non copre questa proteina (non è un guasto). */
   const [noStructure, setNoStructure] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  // Le azioni sulla struttura 3D: l'app calcola i punti, la squadra clicca.
+  const [viewer, setViewer] = useState<MolstarApi | null>(null);
+  const [gira, setGira] = useState(false);
+  const [ultimaSpiegazione, setUltimaSpiegazione] = useState<string | null>(null);
+  const azioni = useMemo(
+    () => azioniDisponibili(currentCase ?? null, model),
+    [currentCase, model],
+  );
+
+  function eseguiAzione(id: Azione3D['id']) {
+    if (!viewer || !currentCase) return;
+    const az = azioni.find((a) => a.id === id);
+    setUltimaSpiegazione(az?.spiegazione ?? null);
+    switch (id) {
+      case 'mutazione': {
+        const m = residuoMutazione(currentCase);
+        if (m) viewer.focusResidues(m.residuo, m.residuo);
+        break;
+      }
+      case 'tratto': {
+        const n = residuiDelTratto(currentCase);
+        if (n > 0) viewer.focusResidues(1, n);
+        break;
+      }
+      case 'gira':
+        viewer.spin(!gira);
+        setGira((g) => !g);
+        break;
+      case 'insieme':
+        viewer.reset();
+        if (gira) {
+          viewer.spin(false);
+          setGira(false);
+        }
+        break;
+    }
+  }
 
   const uniprot = currentCase?.protein.uniprot;
 
@@ -135,11 +179,43 @@ export function Protein({ onNavigate }: { onNavigate: (p: PageId) => void }) {
 
       {model && !loading && (
         <>
-          <MolstarViewer url={model.modelUrl} format={model.format} />
+          <MolstarViewer
+            url={model.modelUrl}
+            format={model.format}
+            onReady={setViewer}
+          />
           <p className="text-[13px] text-ink-muted mt-2">
             Trascina con il mouse per ruotare · rotellina per lo zoom. Le stesse
             strutture che usano i ricercatori.
           </p>
+
+          {/* Azioni verificate: i punti che indicano li calcola l'app dai dati
+              veri, e compaiono solo se corrispondono a QUESTA proteina. */}
+          {viewer && azioni.length > 0 && (
+            <div className="rounded-xl border border-rule bg-white/40 px-5 py-4 mt-3">
+              <div className="font-mono text-[9.5px] tracking-[.18em] uppercase text-accent-3 mb-2.5">
+                🔍 Guarda più da vicino
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {azioni.map((az) => (
+                  <button
+                    key={az.id}
+                    onClick={() => eseguiAzione(az.id)}
+                    className={`rounded-lg border px-3.5 py-2 text-[13px] transition ${
+                      az.id === 'gira' && gira
+                        ? 'border-accent bg-accent text-white'
+                        : 'border-rule bg-white/60 text-ink-light hover:border-accent/50 hover:text-accent'
+                    }`}
+                  >
+                    {az.id === 'gira' && gira ? 'Ferma la rotazione' : az.label}
+                  </button>
+                ))}
+              </div>
+              {ultimaSpiegazione && (
+                <p className="text-[13.5px] text-ink-light mt-3">{ultimaSpiegazione}</p>
+              )}
+            </div>
+          )}
 
           <Sub>La scheda della proteina</Sub>
           <div className="grid sm:grid-cols-2 gap-x-8 gap-y-2 text-[14px]">
