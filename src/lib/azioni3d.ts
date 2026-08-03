@@ -93,14 +93,14 @@ export function azioniDisponibili(
     azioni.push({
       id: 'mutazione',
       label: 'Mostrami dov’è la mutazione',
-      spiegazione: `Il punto che cambia è l’amminoacido numero ${mut.residuo}: da ${mut.da} a ${mut.a}.`,
+      spiegazione: `Eccolo, illuminato in verde chiaro: è l’amminoacido numero ${mut.residuo}, che da ${mut.da} diventa ${mut.a}. Guardate quanto è piccolo rispetto a tutto il resto — eppure basta lui.`,
     });
   }
   if (tratto > 0 && model.sequenceLength && tratto < model.sequenceLength) {
     azioni.push({
       id: 'tratto',
       label: 'Mostrami il tratto che stiamo leggendo',
-      spiegazione: `Le sequenze che state confrontando coprono i primi ${tratto} amminoacidi di ${model.sequenceLength}: è un pezzetto di una macchina molto più grande.`,
+      spiegazione: `In verde chiaro c’è il tratto che state leggendo: i primi ${tratto} amminoacidi su ${model.sequenceLength}. Le lettere che avete davanti sono un pezzetto di una macchina molto più grande.`,
     });
   }
   azioni.push({

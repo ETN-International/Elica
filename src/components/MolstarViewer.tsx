@@ -9,8 +9,13 @@ import 'molstar/lib/mol-plugin-ui/skin/light.scss';
  * dati veri — mai il tutor AI, che sceglie solo se proporre l'azione.
  */
 export interface MolstarApi {
-  /** Inquadra ed evidenzia i residui da..a (numerazione della proteina, 1-based). */
-  focusResidues: (from: number, to: number) => void;
+  /**
+   * Inquadra ed evidenzia i residui da..a (numerazione della proteina, 1-based).
+   * `respiro` è quanto spazio lasciare attorno: su un singolo amminoacido serve
+   * generoso, altrimenti si finisce col naso su un frammento di nastro e si
+   * perde il senso di dove si è dentro la proteina.
+   */
+  focusResidues: (from: number, to: number, respiro?: number) => void;
   /** Torna alla vista d'insieme e toglie le evidenziazioni. */
   reset: () => void;
   /** Fa ruotare (o ferma) la struttura. */
@@ -112,7 +117,7 @@ export function MolstarViewer({ url, format, onReady }: MolstarViewerProps) {
           plugin.managers.structure.hierarchy.current.structures[0]?.cell.obj?.data;
 
         const api: MolstarApi = {
-          focusResidues(from, to) {
+          focusResidues(from, to, respiro = 22) {
             try {
               const data = strutturaCorrente();
               if (!data) return;
@@ -131,7 +136,13 @@ export function MolstarViewer({ url, format, onReady }: MolstarViewerProps) {
               const loci = StructureSelection.toLociWithSourceUnits(sel);
               plugin.managers.interactivity.lociSelects.deselectAll();
               plugin.managers.interactivity.lociSelects.selectOnly({ loci });
-              plugin.managers.camera.focusLoci(loci);
+              // Il respiro attorno al bersaglio è la differenza fra "guarda qui,
+              // dentro tutto il resto" e un primo piano che disorienta.
+              plugin.managers.camera.focusLoci(loci, {
+                minRadius: respiro,
+                extraRadius: respiro,
+                durationMs: 600,
+              });
             } catch {
               /* una struttura senza quei residui non deve rompere la pagina */
             }

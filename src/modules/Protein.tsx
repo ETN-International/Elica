@@ -51,12 +51,15 @@ export function Protein({ onNavigate }: { onNavigate: (p: PageId) => void }) {
     switch (id) {
       case 'mutazione': {
         const m = residuoMutazione(currentCase);
-        if (m) viewer.focusResidues(m.residuo, m.residuo);
+        // Un amminoacido solo: serve molto respiro, o si finisce col naso su un
+        // frammento di nastro senza capire più dove si è.
+        if (m) viewer.focusResidues(m.residuo, m.residuo, 12);
         break;
       }
       case 'tratto': {
         const n = residuiDelTratto(currentCase);
-        if (n > 0) viewer.focusResidues(1, n);
+        // Un tratto è già ampio di suo: basta un margine.
+        if (n > 0) viewer.focusResidues(1, n, 8);
         break;
       }
       case 'gira':
