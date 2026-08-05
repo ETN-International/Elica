@@ -50,14 +50,18 @@ export const DAYS: CourseDay[] = [
     focus: 'Fondamenti',
     morning: [
       a('d1-m1', 'Formazione squadra e nome del team', 'squadra'),
-      // Il Giorno 0 viene PRIMA di qualsiasi parola: è l'ingresso a prerequisito
-      // zero. Senza questa riga l'host che segue la sidebar lo salterebbe.
-      a('d1-m0', 'Giorno 0: la forma, la differenza, le parole', 'giorno0'),
+      // La panoramica sta QUI, mentre si formano le squadre: serve un
+      // inquadramento e non c'è ancora nessuna emozione da proteggere. Messa
+      // dopo il Giorno 0 spegneva il picco della prima scoperta con un elenco
+      // di dieci giornate.
       a('d1-m2', 'Panoramica del percorso', 'programma'),
+      // Il Giorno 0 viene PRIMA di qualsiasi parola: è l'ingresso a prerequisito
+      // zero, e ora è la prima cosa VIVA che accade.
+      a('d1-m0', 'Giorno 0: la forma, la differenza, le parole', 'giorno0'),
     ],
     afternoon: [
       a('d1-p1', "Scegli l'indagine «Emoglobina»", 'home', false, 'emoglobina-falciforme'),
-      a('d1-p2', 'Osserva la proteina 3D del caso', 'protein', true),
+      a('d1-p2', 'Torna alla forma del Giorno 0, stavolta con gli strumenti', 'protein', true),
       // La teoria arriva DOPO il gesto, non prima: è un riferimento da aprire
       // quando serve, non una lezione introduttiva.
       a('d1-p3', 'Teoria: le parole, quando servono', 'teoria'),

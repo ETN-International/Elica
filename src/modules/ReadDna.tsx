@@ -1,5 +1,6 @@
-import { useMemo, useState, useRef } from 'react';
+import { useEffect, useMemo, useState, useRef } from 'react';
 import type { PageId } from '../App';
+import type { AlphaFoldModel } from '../types';
 import { useStore } from '../store';
 import {
   PageHeader,
@@ -15,6 +16,9 @@ import {
   CosaStaiGuardando,
 } from '../components/ui';
 import { AiTutor } from '../components/AiTutor';
+import { MolstarViewer, type MolstarApi } from '../components/MolstarViewer';
+import { fetchAlphaFoldModel } from '../lib/alphafold';
+import { mappaturaValida, residuiDelTratto } from '../lib/azioni3d';
 import {
   AA_NAMES,
   cleanDna,
@@ -53,6 +57,27 @@ export function ReadDna({ onNavigate }: { onNavigate: (p: PageId) => void }) {
     }
   }
   const [selected, setSelected] = useState(0);
+
+  // La chiusura del cerchio: rimostrare la forma 3D accanto alla catena appena
+  // tradotta. Finora l'app AFFERMAVA che le lettere costruiscono la proteina;
+  // qui lo si vede. Se AlphaFold non risponde il modulo prosegue lo stesso.
+  const [forma, setForma] = useState<AlphaFoldModel | null>(null);
+  const [formaKo, setFormaKo] = useState(false);
+  const [viewer3d, setViewer3d] = useState<MolstarApi | null>(null);
+  const [cerchioChiuso, setCerchioChiuso] = useState(false);
+  const uniprotCaso = currentCase?.protein.uniprot;
+  useEffect(() => {
+    if (!uniprotCaso) return;
+    let annullato = false;
+    setForma(null);
+    setFormaKo(false);
+    fetchAlphaFoldModel(uniprotCaso)
+      .then((m) => !annullato && setForma(m))
+      .catch(() => !annullato && setFormaKo(true));
+    return () => {
+      annullato = true;
+    };
+  }, [uniprotCaso]);
 
   const seq = currentCase?.sequences[selected] ?? currentCase?.sequences[0];
   const dna = seq ? cleanDna(seq.dna) : '';
@@ -258,10 +283,69 @@ export function ReadDna({ onNavigate }: { onNavigate: (p: PageId) => void }) {
 
       </Fase>
 
+      {/* ── Il cerchio si chiude: le lettere e la forma, insieme ────────── */}
       <Fase
         n={5}
+        titolo="Ecco che cosa costruiscono"
+        perche="Finora ve l'abbiamo detto a parole: queste lettere costruiscono una proteina. Adesso guardatelo. Questa è la stessa forma che avete girato il primo giorno."
+      >
+        <div className="rounded-lg bg-paper-2 px-4 py-3 mb-3">
+          <div className="font-mono text-[9.5px] tracking-[.18em] uppercase text-ink-muted mb-1.5">
+            La catena che avete appena tradotto
+          </div>
+          <p className="font-mono text-[15px] text-ink tracking-wider break-all">
+            {protein.replace(/\*/g, '')}
+          </p>
+          <p className="text-[12.5px] text-ink-muted mt-1.5">
+            {protein.replace(/\*/g, '').length} amminoacidi, uno per ogni gruppo di
+            tre lettere che avete letto qui sopra.
+          </p>
+        </div>
+
+        {forma && (
+          <>
+            <MolstarViewer
+              url={forma.modelUrl}
+              format={forma.format}
+              onReady={setViewer3d}
+            />
+            {viewer3d && mappaturaValida(currentCase, forma) && (
+              <div className="mt-3">
+                <button
+                  onClick={() => {
+                    const n = residuiDelTratto(currentCase);
+                    if (n > 0) viewer3d.focusResidues(1, n, 8);
+                    setCerchioChiuso(true);
+                  }}
+                  className="rounded-lg bg-accent text-white px-4 py-2.5 text-[13.5px] font-medium hover:opacity-90 transition cta-pulse"
+                >
+                  Illumina qui dentro il pezzo che ho appena letto{' '}
+                  <span className="nudge">→</span>
+                </button>
+                {cerchioChiuso && (
+                  <p className="text-[14.5px] text-ink-light mt-3 border-l-2 border-accent pl-3">
+                    In verde chiaro c'è esattamente la catena qui sopra. Non è una
+                    somiglianza: quelle lettere <strong>sono</strong> quel pezzo di
+                    struttura. Cambiarne una cambia quel pezzo — ed è tutta qui la
+                    storia dell'indagine.
+                  </p>
+                )}
+              </div>
+            )}
+          </>
+        )}
+        {formaKo && (
+          <p className="text-[13.5px] text-ink-muted">
+            La struttura 3D non si è caricata (serve la rete). Proseguite: la
+            lettura del gene qui sopra è completa e vale lo stesso.
+          </p>
+        )}
+      </Fase>
+
+      <Fase
+        n={6}
         titolo="Scrivi cosa hai capito"
-        perche="Avete letto il gene: adesso spiegate cosa costruisce, con parole vostre. Salvate e il tutor vi risponde."
+        perche="Avete visto il legame fra le lettere e la forma. Adesso ditelo con parole vostre: è quello che resta. Salvate e il tutor vi risponde."
       >
       <ProjectWork
         onDraft={setDraft}
@@ -284,7 +368,7 @@ export function ReadDna({ onNavigate }: { onNavigate: (p: PageId) => void }) {
       </Fase>
 
       <Fase
-        n={6}
+        n={7}
         titolo="Parlane con il tutor"
         perche="Qui trovate la sua risposta a quello che avete scritto. Ha davanti la sequenza tradotta e i controlli di qualità."
       >

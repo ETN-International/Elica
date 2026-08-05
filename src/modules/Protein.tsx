@@ -20,6 +20,7 @@ import { MolstarViewer, type MolstarApi } from '../components/MolstarViewer';
 import { fetchAlphaFoldModel, NoStructureError } from '../lib/alphafold';
 import { SCREEN_BRIEFINGS } from '../data/tutorBriefings';
 import { teamWritingContext } from '../lib/teamContext';
+import { giaVistoNelGiorno0 } from '../lib/progresso';
 import { LEGGERE_LA_3D } from '../data/guardare';
 import { askTutorProactive } from '../lib/ai';
 import {
@@ -172,7 +173,11 @@ export function Protein({ onNavigate }: { onNavigate: (p: PageId) => void }) {
       <FiloDellIndagine
         domanda={currentCase.question}
         passo="Primo dei tre gesti"
-        contributo="Prima di capire che cosa la mutazione manda in tilt, bisogna vedere che cosa c'è da mandare in tilt. Qui non rispondete ancora alla domanda: guardate la macchina in gioco."
+        contributo={
+          giaVistoNelGiorno0(currentCase.id, dossier)
+            ? "Questa forma l'avete già girata nel Giorno 0, ma allora era solo una forma senza nome. Adesso tornate a guardarla sapendo che cos'è — e con gli strumenti per farvi mostrare i punti che contano."
+            : "Prima di capire che cosa la mutazione manda in tilt, bisogna vedere che cosa c'è da mandare in tilt. Qui non rispondete ancora alla domanda: guardate la macchina in gioco."
+        }
       />
 
       {loading && (
@@ -215,7 +220,7 @@ export function Protein({ onNavigate }: { onNavigate: (p: PageId) => void }) {
           <Fase
             n={1}
             titolo="Prima guardala"
-            perche={`La domanda parla di qualcosa che si rompe: ecco che cosa. Questa è ${currentCase.protein.name}, ricostruita dai ricercatori. Non serve sapere nulla per cominciare — prendetela col mouse e giratela.`}
+            perche={`La domanda parla di qualcosa che si rompe: ecco che cosa. Questa è ${currentCase.protein.name}, ricostruita dai ricercatori. Prendetela col mouse e giratela.`}
           >
             <MolstarViewer url={model.modelUrl} format={model.format} onReady={setViewer} />
             <p className="text-[13px] text-ink-muted mt-2">

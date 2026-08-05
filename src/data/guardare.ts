@@ -56,6 +56,14 @@ export const LEGGERE_ALLINEAMENTO = {
         'è un “buco” (gap): significa che in quella sequenza manca una lettera che l’altra ha. Succede quando un pezzo di DNA è stato tolto o aggiunto.',
     },
     {
+      // Il minimo indispensabile perché al Giorno 3 la parola non arrivi
+      // sconosciuta. Il codice genetico si spiega davvero al Giorno 4, con
+      // LEGGERE_CODONI: qui basta che «amminoacido» abbia un significato.
+      termine: 'Codone e amminoacido',
+      spiegazione:
+        'le lettere si leggono a gruppi di tre; ogni gruppo da tre costruisce un pezzetto della proteina, e quel pezzetto si chiama amminoacido. Per questo una lettera cambiata può cambiare un pezzo della proteina.',
+    },
+    {
       termine: 'La percentuale di identità',
       spiegazione:
         'dice quanto le due sequenze si somigliano. Più è alta, più i due geni sono imparentati — o più la mutazione è piccola.',

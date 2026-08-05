@@ -191,3 +191,15 @@ export function completata(id: string, prove: Prove): boolean {
 export function completate(ids: string[], prove: Prove): Set<string> {
   return new Set(ids.filter((id) => completata(id, prove)));
 }
+
+/**
+ * La squadra ha già incontrato QUESTO caso nel Giorno 0?
+ *
+ * Il Giorno 0 usa l'emoglobina falciforme: se poi l'indagine è la stessa, i
+ * moduli non devono annunciare come nuova una scoperta che è già stata fatta.
+ * Meglio riprenderla e farla crescere.
+ */
+export function giaVistoNelGiorno0(caseId: string | undefined, dossier: Dossier): boolean {
+  if (caseId !== 'emoglobina-falciforme') return false;
+  return dossier.entries.some((e) => e.caseId === 'giorno0');
+}

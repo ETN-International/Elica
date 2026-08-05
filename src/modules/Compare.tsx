@@ -21,6 +21,7 @@ import { SCREEN_BRIEFINGS } from '../data/tutorBriefings';
 import { LEGGERE_ALLINEAMENTO } from '../data/guardare';
 import { askTutorProactive } from '../lib/ai';
 import { teamWritingContext } from '../lib/teamContext';
+import { giaVistoNelGiorno0 } from '../lib/progresso';
 
 const ROW = 45; // basi per riga nella visualizzazione allineata
 
@@ -169,7 +170,11 @@ export function Compare({ onNavigate }: { onNavigate: (p: PageId) => void }) {
       <FiloDellIndagine
         domanda={currentCase.question}
         passo="Secondo dei tre gesti"
-        contributo="È qui che si risponde alla domanda: mettiamo i due geni uno sopra l'altro e cerchiamo il punto in cui differiscono. Quel punto è la vostra scoperta."
+        contributo={
+          giaVistoNelGiorno0(currentCase.id, dossier)
+            ? "La lettera che avete trovato nel Giorno 0 è questa. Allora sapevate solo che cambiava qualcosa: adesso scoprite CHE COSA provoca — quale pezzo della proteina cambia, e perché questo basta a deformare i globuli rossi."
+            : "È qui che si risponde alla domanda: mettiamo i due geni uno sopra l'altro e cerchiamo il punto in cui differiscono. Quel punto è la vostra scoperta."
+        }
       />
 
       <Fase
@@ -364,7 +369,7 @@ export function Compare({ onNavigate }: { onNavigate: (p: PageId) => void }) {
           cambiata nel DNA non sempre cambia la proteina. */}
       <Esercizio
         id="confronto-amminoacidi-cambiati"
-        consegna={`Nell'allineamento ci sono ${result.mismatches} lettere diverse. Ma quanti AMMINOACIDI cambiano davvero nella proteina? (guardate le differenze qui sotto e contate solo quelle che cambiano amminoacido)`}
+        consegna={`Nell'allineamento ci sono ${result.mismatches} lettere diverse. Guardate l'elenco delle differenze qui sopra: alcune dicono che l'amminoacido cambia, altre no. Quante sono quelle in cui cambia?`}
         expected={String(amminoacidiCambiati)}
         placeholder="scrivi un numero"
         explanation={

@@ -208,10 +208,21 @@ function PhaseB({
   );
   const [found, setFound] = useState(false);
   const [wrong, setWrong] = useState(false);
+  const [tentativi, setTentativi] = useState(0);
+  /** La squadra ha chiesto aiuto: solo allora i colori si accendono. */
+  const [aiutoChiesto, setAiutoChiesto] = useState(false);
   const [submitted, setSubmitted] = useState('');
 
   const a = cleanDna(GIORNO0_SEQ_A.dna);
   const b = cleanDna(GIORNO0_SEQ_B.dna);
+
+  /**
+   * Finché non hanno trovato (o chiesto aiuto) le due righe sono monocrome.
+   * Prima il colore segnalava la base diversa PRIMA del clic: la scoperta era
+   * servita pronta e allo studente restava solo il gesto di cliccarci sopra.
+   * Il colore ora è la conferma di aver trovato, non l'indizio.
+   */
+  const svelato = found || aiutoChiesto;
 
   function clickBase(i: number) {
     if (result.matchLine[i] === ' ' && a[i] !== '-' && b[i] !== '-') {
@@ -219,6 +230,7 @@ function PhaseB({
       setWrong(false);
     } else {
       setWrong(true);
+      setTentativi((n) => n + 1);
     }
   }
 
@@ -239,7 +251,13 @@ function PhaseB({
               {a.split('').map((ch, i) => (
                 <span
                   key={i}
-                  className={result.matchLine[i] === '|' ? 'text-accent-2' : 'text-accent font-bold'}
+                  className={
+                    !svelato
+                      ? 'text-ink-light'
+                      : result.matchLine[i] === '|'
+                        ? 'text-accent-2'
+                        : 'text-accent font-bold'
+                  }
                 >
                   {ch}
                 </span>
@@ -252,17 +270,21 @@ function PhaseB({
               {b.split('').map((ch, i) => {
                 const isDiff = result.matchLine[i] === ' ';
                 const isTheOne = found && isDiff;
+                // Hover identico su TUTTE le basi: se fosse diverso solo su
+                // quella giusta, la risposta si troverebbe col mouse.
                 return (
                   <button
                     key={i}
                     onClick={() => clickBase(i)}
-                    className={`${
+                    className={
                       isTheOne
                         ? 'bg-accent text-white rounded'
-                        : isDiff
-                          ? 'text-accent font-bold hover:bg-accent/15 rounded'
-                          : 'text-accent-2 hover:bg-black/5 rounded'
-                    }`}
+                        : !svelato
+                          ? 'text-ink-light hover:bg-black/5 rounded'
+                          : isDiff
+                            ? 'text-accent font-bold hover:bg-black/5 rounded'
+                            : 'text-accent-2 hover:bg-black/5 rounded'
+                    }
                   >
                     {ch}
                   </button>
@@ -275,18 +297,38 @@ function PhaseB({
 
       {found ? (
         <Note label="Trovato!">
-          Proprio lì: una sola lettera diversa. Tenete a mente la domanda — una
-          differenza così piccola può contare molto, o è un dettaglio? Scrivete cosa ne
-          pensate.
+          Proprio lì: in tutta la riga, una sola lettera diversa. Ora l'app ha
+          colorato l'allineamento — verde dove combaciano, arancione dove no.
+          Tenete a mente la domanda: una differenza così piccola può contare
+          molto, o è un dettaglio? Scrivete cosa ne pensate.
         </Note>
+      ) : aiutoChiesto ? (
+        <p className="text-[13.5px] text-ink-light mt-2">
+          Eccola, in arancione. Cliccatela per proseguire — e notate quanto era
+          piccola: è esattamente il punto di tutta questa storia.
+        </p>
       ) : wrong ? (
         <p className="text-[13.5px] text-accent mt-2">
-          Non è quello il punto: guardate meglio dove i colori non combaciano.
+          Non è quella: quelle due lettere sono uguali. Continuate a cercare — in
+          tutta la riga ce n'è una sola diversa.
         </p>
       ) : (
         <p className="text-[13.5px] text-ink-muted mt-2">
-          Cliccate sulla riga di sotto la lettera che secondo voi è diversa.
+          Le due righe sono quasi identiche: in un solo punto no. Confrontatele
+          lettera per lettera — dividetevi la riga fra di voi, si fa prima — e
+          cliccate sulla riga di sotto quella che secondo voi è diversa.
         </p>
+      )}
+
+      {/* L'aiuto esiste, ma va chiesto: chi lo usa sa di averlo chiesto, chi non
+          lo usa ha scoperto davvero. */}
+      {!found && !aiutoChiesto && tentativi >= 3 && (
+        <button
+          onClick={() => setAiutoChiesto(true)}
+          className="mt-3 rounded-lg border border-rule bg-white/50 px-4 py-2 text-[13px] text-ink-light hover:border-accent/50 hover:text-accent transition"
+        >
+          Non la troviamo: aiutaci
+        </button>
       )}
 
       <TeamAnswer
