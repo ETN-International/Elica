@@ -89,18 +89,18 @@ export function azioniDisponibili(
   const mut = mappaOk ? residuoMutazione(caso) : null;
   const tratto = mappaOk ? residuiDelTratto(caso) : 0;
 
+  if (tratto > 0 && model.sequenceLength && tratto < model.sequenceLength) {
+    azioni.push({
+      id: 'tratto',
+      label: 'Dove sono, qui dentro, le lettere che leggeremo?',
+      spiegazione: `In verde chiaro c’è il tratto che state leggendo: i primi ${tratto} amminoacidi su ${model.sequenceLength}. Le lettere che avete davanti sono un pezzetto di una macchina molto più grande.`,
+    });
+  }
   if (mut) {
     azioni.push({
       id: 'mutazione',
       label: 'Mostrami dov’è la mutazione',
       spiegazione: `Eccolo, illuminato in verde chiaro: è l’amminoacido numero ${mut.residuo}, che da ${mut.da} diventa ${mut.a}. Guardate quanto è piccolo rispetto a tutto il resto — eppure basta lui.`,
-    });
-  }
-  if (tratto > 0 && model.sequenceLength && tratto < model.sequenceLength) {
-    azioni.push({
-      id: 'tratto',
-      label: 'Mostrami il tratto che stiamo leggendo',
-      spiegazione: `In verde chiaro c’è il tratto che state leggendo: i primi ${tratto} amminoacidi su ${model.sequenceLength}. Le lettere che avete davanti sono un pezzetto di una macchina molto più grande.`,
     });
   }
   azioni.push({

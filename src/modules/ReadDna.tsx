@@ -11,6 +11,7 @@ import {
   ProjectWork,
   ProssimoPasso,
   Fase,
+  FiloDellIndagine,
   CosaStaiGuardando,
 } from '../components/ui';
 import { AiTutor } from '../components/AiTutor';
@@ -116,6 +117,12 @@ export function ReadDna({ onNavigate }: { onNavigate: (p: PageId) => void }) {
         dek="Scegli una sequenza del caso, guardala in modo leggibile e falla spiegare al tutor. Nessun file da capire, nessun upload."
       />
 
+      <FiloDellIndagine
+        domanda={currentCase.question}
+        passo="Terzo dei tre gesti"
+        contributo="Avete visto la forma e trovato la differenza. Resta da leggere che cosa c'è scritto nel gene: è il codice che costruisce quella proteina, lettera per lettera."
+      />
+
       <div className="flex flex-wrap gap-2 mb-4">
         {currentCase.sequences.map((s, i) => (
           <button
@@ -142,7 +149,7 @@ export function ReadDna({ onNavigate }: { onNavigate: (p: PageId) => void }) {
       <Fase
         n={1}
         titolo="Prima: di questo dato ci si può fidare?"
-        perche="In scienza non si lavora su un dato prima di averlo controllato. È il primo gesto di ogni ricercatore, e lo fate anche voi."
+        perche="Prima di leggere il gene, una verifica: in scienza non si lavora su un dato senza averlo controllato. È il primo gesto di ogni ricercatore, e lo fate anche voi."
       >
       <Sub>Il controllo qualità</Sub>
       <p className="text-[14px] mb-3">

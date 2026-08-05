@@ -12,6 +12,7 @@ import {
   ProjectWork,
   ProssimoPasso,
   Fase,
+  FiloDellIndagine,
   CosaStaiGuardando,
 } from '../components/ui';
 import { AiTutor } from '../components/AiTutor';
@@ -165,10 +166,16 @@ export function Compare({ onNavigate }: { onNavigate: (p: PageId) => void }) {
         dek="L'app allinea le due sequenze con un algoritmo vero e le colora: verde dove combaciano, rosso dove differiscono. L'AI interpreta cosa significa."
       />
 
+      <FiloDellIndagine
+        domanda={currentCase.question}
+        passo="Secondo dei tre gesti"
+        contributo="È qui che si risponde alla domanda: mettiamo i due geni uno sopra l'altro e cerchiamo il punto in cui differiscono. Quel punto è la vostra scoperta."
+      />
+
       <Fase
         n={1}
         titolo="Guarda dove i due geni non combaciano"
-        perche="L'app ha allineato le due sequenze con lo stesso algoritmo che usano i ricercatori. Verde dove sono uguali, rosso dove cambiano: cominciate da qui, senza leggere altro."
+        perche="Avete visto la proteina; ora il gene che la costruisce, in due versioni. L'app le ha allineate con lo stesso algoritmo dei ricercatori: verde dove combaciano, rosso dove no. Cominciate da qui."
       >
       <div className="flex flex-wrap gap-6 border-t-0 pt-0 mb-4">
         <Stat value={`${result.identityPct}%`} label="identità" />
@@ -244,7 +251,7 @@ export function Compare({ onNavigate }: { onNavigate: (p: PageId) => void }) {
         <Fase
           n={3}
           titolo="La scoperta"
-          perche="Ora che sapete leggere l'allineamento, ecco cosa comporta davvero quel punto rosso: l'app calcola l'effetto sulla proteina, senza inventare nulla."
+          perche="Ecco la risposta alla domanda da cui siete partiti. Quel punto rosso non è un dettaglio tecnico: l'app calcola che effetto ha sulla proteina che avete girato poco fa."
         >
         <div className="rounded-xl bg-ink text-paper px-7 py-6 mt-0">
           <div className="font-mono text-[10px] tracking-[.2em] uppercase text-[#e8935f] mb-3">

@@ -12,6 +12,7 @@ import {
   ProjectWork,
   ProssimoPasso,
   Fase,
+  FiloDellIndagine,
   CosaStaiGuardando,
 } from '../components/ui';
 import { AiTutor } from '../components/AiTutor';
@@ -168,6 +169,12 @@ export function Protein({ onNavigate }: { onNavigate: (p: PageId) => void }) {
         dek="Dalla sequenza, l'app recupera da AlphaFold DB la struttura 3D già calcolata e la mostra ruotabile. La struttura è vera; il tutor la racconta."
       />
 
+      <FiloDellIndagine
+        domanda={currentCase.question}
+        passo="Primo dei tre gesti"
+        contributo="Prima di capire che cosa la mutazione manda in tilt, bisogna vedere che cosa c'è da mandare in tilt. Qui non rispondete ancora alla domanda: guardate la macchina in gioco."
+      />
+
       {loading && (
         <div className="molstar-wrap flex items-center justify-center text-[#e8e0d4] font-mono text-sm">
           Contatto AlphaFold DB per {currentCase.protein.uniprot}…
@@ -208,7 +215,7 @@ export function Protein({ onNavigate }: { onNavigate: (p: PageId) => void }) {
           <Fase
             n={1}
             titolo="Prima guardala"
-            perche={`Questa è ${currentCase.protein.name}, come l'hanno ricostruita i ricercatori. Non serve sapere nulla per cominciare: prendetela col mouse e giratela.`}
+            perche={`La domanda parla di qualcosa che si rompe: ecco che cosa. Questa è ${currentCase.protein.name}, ricostruita dai ricercatori. Non serve sapere nulla per cominciare — prendetela col mouse e giratela.`}
           >
             <MolstarViewer url={model.modelUrl} format={model.format} onReady={setViewer} />
             <p className="text-[13px] text-ink-muted mt-2">
@@ -229,8 +236,8 @@ export function Protein({ onNavigate }: { onNavigate: (p: PageId) => void }) {
           {viewer && azioni.length > 0 && (
             <Fase
               n={3}
-              titolo="Guarda più da vicino"
-              perche="Adesso che sapete che il nastro è una catena di amminoacidi, ha senso puntare il dito su un pezzo preciso. Dove puntare lo calcola l'app dai dati veri: nessuno se lo inventa."
+              titolo="Questa forma è scritta da qualche parte"
+              perche="Nessuno l'ha disegnata: questa forma nasce da un gene, cioè da una sequenza di lettere. Fra poco quelle lettere le leggerete davvero — col primo pulsante vedete a quale pezzo di questa struttura corrispondono. Dove puntare lo calcola l'app dai dati veri."
             >
               <div className="flex flex-wrap gap-2">
                 {azioni.map((az) => (
@@ -265,7 +272,7 @@ export function Protein({ onNavigate }: { onNavigate: (p: PageId) => void }) {
             <Fase
               n={4}
               titolo="Fai tu un conto"
-              perche="Avete visto che il tratto studiato è solo una parte della proteina. Mettiamolo in numeri: è la differenza fra «mi sembra poco» e sapere quanto."
+              perche="Il gene che state studiando è solo un pezzo di questa proteina. Quanto piccolo? Metterlo in numeri cambia il modo di guardarlo: è la differenza fra «mi sembra poco» e sapere quanto."
             >
               <Esercizio
                 id="proteina-percentuale"
@@ -327,7 +334,7 @@ export function Protein({ onNavigate }: { onNavigate: (p: PageId) => void }) {
           <Fase
             n={7}
             titolo="Metti la proteina nel dossier"
-            perche="Il dossier è il racconto che presenterete alla giuria: ogni cosa che salvate ne diventa una tappa."
+            perche="Avete la prima metà della risposta: sapete che cosa la mutazione può rompere. Salvatela — è la prima tappa del racconto che porterete alla giuria."
           >
             <AddToDossierButton
               onAdd={() =>

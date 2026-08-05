@@ -106,6 +106,38 @@ export function HowTo({ steps }: { steps: string[] }) {
 }
 
 /**
+ * Il filo dell'indagine, in cima a ogni modulo di lavoro.
+ *
+ * Mancava, ed era il buco più grande: la squadra sceglieva un'indagine con una
+ * sua domanda ("perché una singola mutazione causa l'anemia falciforme?") e poi
+ * nei moduli quella domanda non compariva mai più. Le fasi si legavano l'una
+ * all'altra, ma l'insieme non si legava a niente: si facevano compiti senza
+ * sapere a quale domanda stessero servendo.
+ */
+export function FiloDellIndagine({
+  domanda,
+  passo,
+  contributo,
+}: {
+  /** La domanda biologica del caso scelto. */
+  domanda: string;
+  /** Dove siamo nel percorso: "Primo dei tre gesti". */
+  passo: string;
+  /** Cosa fa QUESTO modulo per rispondere a quella domanda. */
+  contributo: string;
+}) {
+  return (
+    <div className="rounded-xl bg-ink text-paper px-6 py-5 mb-2">
+      <div className="font-mono text-[9.5px] tracking-[.18em] uppercase text-[#e8935f] mb-2">
+        La vostra indagine · {passo}
+      </div>
+      <p className="font-serif text-[19px] leading-snug text-paper">{domanda}</p>
+      <p className="text-[14px] text-[#c9bfb4] mt-2.5 leading-relaxed">{contributo}</p>
+    </div>
+  );
+}
+
+/**
  * Un passo del modulo, numerato, con il motivo per cui viene DOPO il precedente.
  *
  * È il filo causale che prima mancava: le schermate erano un mucchio di riquadri
