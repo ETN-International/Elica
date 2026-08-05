@@ -7,6 +7,7 @@ import {
   ALL_ACTIVITIES,
   type DayActivity,
 } from '../data/days';
+import { completata, automatica, SOLO_MANUALI } from '../lib/progresso';
 
 export function Sidebar({
   page,
@@ -19,8 +20,14 @@ export function Sidebar({
   open: boolean;
   onClose: () => void;
 }) {
-  const { currentCase, progress, toggleUnit, selectCase } = useStore();
-  const doneSet = new Set(progress.unitsDone);
+  const { currentCase, progress, toggleUnit, selectCase, dossier } = useStore();
+  // Le spunte si accendono DA SOLE: ogni attività ha una prova che la dimostra
+  // (una voce nel dossier, un quiz superato, un esercizio risolto). Restano da
+  // spuntare a mano solo le cose che succedono fuori dallo schermo.
+  const prove = { dossier, progress };
+  const doneSet = new Set(
+    ALL_ACTIVITIES.filter((a) => completata(a.id, prove)).map((a) => a.id),
+  );
 
   // La prima giornata non ancora completata.
   const firstIncomplete =
@@ -96,6 +103,10 @@ export function Sidebar({
             {totalDone}/{ALL_ACTIVITIES.length}
           </span>
         </div>
+        <p className="px-1 text-[9px] text-[#6b5f54] leading-snug mb-1.5">
+          I cerchi si spuntano da soli quando svolgete l'attività. I quadrati
+          sono da spuntare a mano: succedono fuori dall'app.
+        </p>
 
         <nav className="flex-1 overflow-y-auto flex flex-col gap-0.5 -mr-2 pr-2">
           {DAYS.map((day) => {
@@ -149,6 +160,7 @@ export function Sidebar({
                         checked={doneSet.has(act.id)}
                         disabled={!!act.requiresCase && !currentCase && !act.caseId}
                         onToggle={() => toggleUnit(act.id)}
+                        auto={automatica(act.id) && !SOLO_MANUALI.has(act.id)}
                         onGo={() => go(act)}
                       />
                     ))}
@@ -161,6 +173,7 @@ export function Sidebar({
                         checked={doneSet.has(act.id)}
                         disabled={!!act.requiresCase && !currentCase && !act.caseId}
                         onToggle={() => toggleUnit(act.id)}
+                        auto={automatica(act.id) && !SOLO_MANUALI.has(act.id)}
                         onGo={() => go(act)}
                       />
                     ))}
@@ -171,6 +184,7 @@ export function Sidebar({
                         checked={doneSet.has(day.output.id)}
                         disabled={!!day.output.requiresCase && !currentCase && !day.output.caseId}
                         onToggle={() => toggleUnit(day.output.id)}
+                        auto={automatica(day.output.id) && !SOLO_MANUALI.has(day.output.id)}
                         onGo={() => go(day.output)}
                         isOutput
                       />
@@ -228,6 +242,7 @@ function ActivityRow({
   checked,
   disabled,
   onToggle,
+  auto,
   onGo,
   isOutput,
 }: {
@@ -236,6 +251,8 @@ function ActivityRow({
   checked: boolean;
   disabled: boolean;
   onToggle: () => void;
+  /** true se l'app sa dimostrare da sola questa attività. */
+  auto: boolean;
   onGo: () => void;
   isOutput?: boolean;
 }) {
@@ -246,15 +263,34 @@ function ActivityRow({
         active ? 'bg-[rgba(200,66,10,.16)]' : ''
       }`}
     >
-      <input
-        type="checkbox"
-        checked={checked}
-        disabled={disabled}
-        onChange={onToggle}
-        title="Segna come svolta"
-        className="ml-1 mt-1.5 h-3.5 w-3.5 shrink-0 disabled:opacity-30"
-        style={{ accentColor: 'var(--color-accent-2)' }}
-      />
+      {/* Automatica: l'app SA se è stata fatta, e non si tocca. Manuale solo
+          per ciò che avviene lontano dallo schermo (la presentazione in sala). */}
+      {auto ? (
+        <span
+          title={
+            checked
+              ? 'Completata: l\'app l\'ha rilevato dal vostro lavoro'
+              : 'Si spunta da sola quando la svolgete'
+          }
+          className={`ml-1 mt-1.5 h-3.5 w-3.5 shrink-0 inline-flex items-center justify-center text-[9px] font-bold ${
+            checked
+              ? 'bg-accent-2 text-white rounded-full'
+              : 'border border-dashed border-white/20 text-transparent rounded-full'
+          }`}
+        >
+          ✓
+        </span>
+      ) : (
+        <input
+          type="checkbox"
+          checked={checked}
+          disabled={disabled}
+          onChange={onToggle}
+          title="Da spuntare a mano: avviene fuori dall'app"
+          className="ml-1 mt-1.5 h-3.5 w-3.5 shrink-0 disabled:opacity-30"
+          style={{ accentColor: 'var(--color-accent-2)' }}
+        />
+      )}
       <button
         disabled={disabled || !act.page}
         onClick={onGo}

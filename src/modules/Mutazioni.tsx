@@ -24,7 +24,7 @@ import { teamWritingContext } from '../lib/teamContext';
 const SAMPLE = 'ATGGTGCACCTGACTCCTGAGGAGAAGTCTGCCGTTACT';
 
 export function Mutazioni({ onNavigate }: { onNavigate: (p: PageId) => void }) {
-  const { currentCase, addEntry, dossier } = useStore();
+  const { currentCase, addEntry, dossier, segna } = useStore();
   const [draft, setDraft] = useState('');
 
   // Sequenze disponibili: quelle del caso corrente, o un campione di partenza.
@@ -55,6 +55,8 @@ export function Mutazioni({ onNavigate }: { onNavigate: (p: PageId) => void }) {
   const [achieved, setAchieved] = useState<Set<string>>(new Set());
   useEffect(() => {
     if (effect.category !== 'nessuna') {
+      // È una prova: serve a spuntare da sole le attività del Giorno 5.
+      segna('mutazioniOttenute', effect.category);
       setAchieved((prev) => {
         if (prev.has(effect.category)) return prev;
         const next = new Set(prev);
@@ -62,7 +64,7 @@ export function Mutazioni({ onNavigate }: { onNavigate: (p: PageId) => void }) {
         return next;
       });
     }
-  }, [effect.category]);
+  }, [effect.category, segna]);
   const targets: { id: string; label: string }[] = [
     { id: 'silente', label: 'Silente' },
     { id: 'missenso', label: 'Missenso' },

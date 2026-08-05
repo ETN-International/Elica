@@ -268,6 +268,7 @@ export function Protein({ onNavigate }: { onNavigate: (p: PageId) => void }) {
               perche="Avete visto che il tratto studiato è solo una parte della proteina. Mettiamolo in numeri: è la differenza fra «mi sembra poco» e sapere quanto."
             >
               <Esercizio
+                id="proteina-percentuale"
                 consegna={`Il gene che state studiando copre ${tratto} amminoacidi, ma la proteina intera ne ha ${model.sequenceLength}. Che percentuale della proteina avete davanti? (numero intero)`}
                 expected={String(Math.round((tratto / model.sequenceLength) * 100))}
                 placeholder="es. 12"

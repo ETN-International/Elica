@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useStore } from './store';
 import { Sidebar } from './components/Sidebar';
 import { Home } from './modules/Home';
 import { ReadDna } from './modules/ReadDna';
@@ -58,6 +59,7 @@ function pageFromHash(): PageId {
 }
 
 export function App() {
+  const { segna } = useStore();
   const [page, setPage] = useState<PageId>(() => pageFromHash());
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -70,6 +72,13 @@ export function App() {
     history.pushState(null, '', `#${p}`);
     window.scrollTo(0, 0);
   };
+
+  // Le pagine che si leggono e basta (teoria, programma, valutazione) contano
+  // come svolte quando vengono aperte: è tutto ciò che l'app può onestamente
+  // sapere, e basta per spuntarle da sole.
+  useEffect(() => {
+    segna('pagesVisited', page);
+  }, [page, segna]);
 
   useEffect(() => {
     // `popstate` copre il tasto Indietro; `hashchange` i link diretti.

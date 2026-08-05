@@ -356,6 +356,7 @@ export function Compare({ onNavigate }: { onNavigate: (p: PageId) => void }) {
       {/* Non "copia il numero qui sopra": qui bisogna capire che una lettera
           cambiata nel DNA non sempre cambia la proteina. */}
       <Esercizio
+        id="confronto-amminoacidi-cambiati"
         consegna={`Nell'allineamento ci sono ${result.mismatches} lettere diverse. Ma quanti AMMINOACIDI cambiano davvero nella proteina? (guardate le differenze qui sotto e contate solo quelle che cambiano amminoacido)`}
         expected={String(amminoacidiCambiati)}
         placeholder="scrivi un numero"

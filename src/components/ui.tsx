@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import type { PageId } from '../App';
 import { useStore } from '../store';
 
@@ -364,12 +364,15 @@ function answerMatches(input: string, expected: string): boolean {
  * modulo. Dà pratica immediata con feedback (Team-Task).
  */
 export function Esercizio({
+  id,
   consegna,
   expected,
   placeholder,
   explanation,
 }: {
   consegna: string;
+  /** Identificativo per registrare che è stato risolto (spunta automatica). */
+  id?: string;
   expected: string;
   placeholder?: string;
   explanation: string;
@@ -377,6 +380,11 @@ export function Esercizio({
   const [val, setVal] = useState('');
   const [checked, setChecked] = useState(false);
   const ok = answerMatches(val, expected);
+  const { segna } = useStore();
+  // Risolto davvero: è una delle prove con cui si accendono le spunte del percorso.
+  useEffect(() => {
+    if (checked && ok && id) segna('eserciziRisolti', id);
+  }, [checked, ok, id, segna]);
 
   return (
     <div className="rounded-xl border border-accent/30 bg-[rgba(200,66,10,.04)] px-5 py-4 my-5">

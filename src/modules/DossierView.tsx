@@ -47,7 +47,8 @@ function slugify(s: string): string {
 }
 
 export function DossierView({ onNavigate }: { onNavigate: (p: PageId) => void }) {
-  const { currentCase, dossier, addEntry, removeEntry, resetDossier } = useStore();
+  const { currentCase, dossier, addEntry, removeEntry, resetDossier, segnaEsportato } =
+    useStore();
   const [conclusion, setConclusion] = useState('');
 
   // Il dossier è cumulativo e sopravvive al cambio di caso: si blocca solo se è
@@ -73,6 +74,7 @@ export function DossierView({ onNavigate }: { onNavigate: (p: PageId) => void })
     a.download = `dossier-${slugify(dossier.team)}.html`;
     a.click();
     URL.revokeObjectURL(url);
+    segnaEsportato();
   }
 
   const aiContext = [

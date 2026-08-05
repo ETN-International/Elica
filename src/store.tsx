@@ -23,8 +23,20 @@ const PROGRESS_KEY = 'etn-genoma-progress';
 interface Progress {
   quizPassed: string[];
   challengesDone: string[];
-  /** ID delle unità di attività (del programma) spuntate come svolte. */
+  /**
+   * Unità spuntate A MANO. Servono solo per le attività che l'app non può
+   * dimostrare da sola (la presentazione alla giuria, per esempio): tutto il
+   * resto si deduce dalle prove reali — vedi src/lib/progresso.ts.
+   */
   unitsDone: string[];
+  /** Schermate aperte almeno una volta: per le pagine che si leggono e basta. */
+  pagesVisited: string[];
+  /** Esercizi risolti correttamente. */
+  eserciziRisolti: string[];
+  /** Tipi di mutazione ottenuti nel laboratorio. */
+  mutazioniOttenute: string[];
+  /** true quando il dossier è stato esportato almeno una volta. */
+  dossierEsportato: boolean;
 }
 
 function loadCustom(): Case | null {
@@ -50,7 +62,15 @@ function loadCustom(): Case | null {
 }
 
 function loadProgress(): Progress {
-  const empty: Progress = { quizPassed: [], challengesDone: [], unitsDone: [] };
+  const empty: Progress = {
+    quizPassed: [],
+    challengesDone: [],
+    unitsDone: [],
+    pagesVisited: [],
+    eserciziRisolti: [],
+    mutazioniOttenute: [],
+    dossierEsportato: false,
+  };
   try {
     const raw = localStorage.getItem(PROGRESS_KEY);
     if (!raw) return empty;
@@ -59,6 +79,10 @@ function loadProgress(): Progress {
       quizPassed: p.quizPassed ?? [],
       challengesDone: p.challengesDone ?? [],
       unitsDone: p.unitsDone ?? [],
+      pagesVisited: p.pagesVisited ?? [],
+      eserciziRisolti: p.eserciziRisolti ?? [],
+      mutazioniOttenute: p.mutazioniOttenute ?? [],
+      dossierEsportato: p.dossierEsportato ?? false,
     };
   } catch {
     return empty;
@@ -80,6 +104,8 @@ interface AppStore {
   markQuizPassed: (id: string) => void;
   toggleChallenge: (id: string) => void;
   toggleUnit: (id: string) => void;
+  segna: (campo: 'pagesVisited' | 'eserciziRisolti' | 'mutazioniOttenute', id: string) => void;
+  segnaEsportato: () => void;
 }
 
 const StoreContext = createContext<AppStore | null>(null);
@@ -185,6 +211,20 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
     }));
   }, []);
 
+  /** Registra un fatto avvenuto: è così che le spunte si accendono da sole. */
+  const segna = useCallback(
+    (campo: 'pagesVisited' | 'eserciziRisolti' | 'mutazioniOttenute', id: string) => {
+      setProgress((p) =>
+        p[campo].includes(id) ? p : { ...p, [campo]: [...p[campo], id] },
+      );
+    },
+    [],
+  );
+
+  const segnaEsportato = useCallback(() => {
+    setProgress((p) => (p.dossierEsportato ? p : { ...p, dossierEsportato: true }));
+  }, []);
+
   const toggleUnit = useCallback((id: string) => {
     setProgress((p) => ({
       ...p,
@@ -209,6 +249,8 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
       markQuizPassed,
       toggleChallenge,
       toggleUnit,
+      segna,
+      segnaEsportato,
     }),
     [
       currentCase,
@@ -224,6 +266,8 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
       markQuizPassed,
       toggleChallenge,
       toggleUnit,
+      segna,
+      segnaEsportato,
     ],
   );
 

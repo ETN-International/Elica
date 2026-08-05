@@ -242,6 +242,7 @@ export function ReadDna({ onNavigate }: { onNavigate: (p: PageId) => void }) {
       {/* La regola, non il numero già a schermo: si applica a una sequenza
           diversa da quella che hanno davanti. */}
       <Esercizio
+        id="dna-regola-del-tre"
         consegna="Avete visto la regola: tre lettere di DNA producono un amminoacido. Allora un gene lungo 150 basi quanti amminoacidi produce?"
         expected="50"
         placeholder="scrivi un numero"
