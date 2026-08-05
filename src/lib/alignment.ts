@@ -15,13 +15,13 @@ import { AA_NAMES, cleanDna, translateCodon } from './dna';
  * di lettura reale delle sequenze senza gap: mai su coordinate allineate.
  */
 
-interface ScoringScheme {
+export interface ScoringScheme {
   match: number;
   mismatch: number;
   gap: number;
 }
 
-const DEFAULT_SCHEME: ScoringScheme = { match: 1, mismatch: -1, gap: -2 };
+export const DEFAULT_SCHEME: ScoringScheme = { match: 1, mismatch: -1, gap: -2 };
 
 /** Lunghezza massima di sequenza gestita (oltre, l'allineamento è troppo pesante). */
 export const MAX_SEQ_LENGTH = 3000;
@@ -55,8 +55,9 @@ function cleanIndelAlign(a: string, b: string): { A: string; B: string } | null 
   return shortIsA ? { A: gapped, B: long } : { A: long, B: gapped };
 }
 
-/** Needleman-Wunsch globale classico. */
-function needlemanWunsch(
+/** Needleman-Wunsch globale classico. Generico sulle stringhe: lo riusa
+ *  anche l'allineamento fra sequenze proteiche (vedi lib/proteine.ts). */
+export function needlemanWunsch(
   a: string,
   b: string,
   scheme: ScoringScheme,

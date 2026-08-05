@@ -69,6 +69,22 @@ const almenoCasi =
   (p) =>
     casiDiversi(p) >= n;
 
+/**
+ * Il titolo con cui la domanda formulata dalla SQUADRA finisce nel dossier
+ * (gradino di autonomia del G7). Sta qui perché è anche la prova che quel
+ * gradino è stato fatto.
+ */
+export const TITOLO_DOMANDA_PROPRIA = 'La domanda che avremmo fatto noi';
+
+/**
+ * Quante indagini diverse la squadra ha già portato avanti (Giorno 0 escluso).
+ * Serve a sapere a che punto del percorso sono senza chiederglielo: è il dato
+ * che accende il gradino di autonomia sulla domanda (vedi GradinoDomanda).
+ */
+export function casiSvolti(dossier: Dossier): number {
+  return casiDiversi({ dossier } as Prove);
+}
+
 const oppure =
   (...tests: Test[]): Test =>
   (p) =>
@@ -140,7 +156,13 @@ const PROVE: Record<string, Test> = {
 
   // ── Giorno 7 · indagine completa II ──
   'd7-m1': almenoCasi(4),
-  'd7-m2': almenoCasi(4),
+  // La prova del gradino: hanno scritto una domanda loro prima di leggere la
+  // nostra. Chi arriva al G7 senza il gradino (per esempio riprendendo un caso
+  // già aperto) resta coperto dal conto delle indagini.
+  'd7-m2': oppure(
+    ({ dossier }) => dossier.entries.some((e) => e.title === TITOLO_DOMANDA_PROPRIA),
+    almenoCasi(4),
+  ),
   'd7-p1': voce('conclusione'),
   'd7-p2': quiz('metodo'),
   'd7-out': ({ dossier }) =>

@@ -35,6 +35,14 @@ export interface Case {
     uniprot: string;
     name: string;
   };
+  /**
+   * Confronto a livello di PROTEINA, per la modalità libera: sequenze
+   * amminoacidiche REALI prese da UniProt. Serve perché UniProt è la banca dati
+   * delle proteine e non contiene DNA: una squadra che sceglie liberamente la
+   * sua proteina può ottenere due sequenze proteiche vere, non due di DNA.
+   * Mai ricostruite dalla proteina per retro-traduzione: sarebbe inventarle.
+   */
+  proteine?: { label: string; uniprot: string; seq: string }[];
   /** Tema per raggruppare i casi nel catalogo. */
   theme?: CaseTheme;
   /** Difficoltà 1–3 (1 = base, 3 = avanzato). */

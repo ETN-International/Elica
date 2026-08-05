@@ -72,7 +72,7 @@ export function PhaseTutor({
         intro={intro ?? undefined}
         context={[
           brief,
-          `Giorno 0 — ${phaseLabel}. La squadra ha appena scritto: "${
+          `${phaseLabel}. La squadra ha appena scritto: "${
             teamInput || '(ancora nulla)'
           }". Continua a facilitare a partire dalle loro risposte.`,
         ]

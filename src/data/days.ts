@@ -145,7 +145,9 @@ export const DAYS: CourseDay[] = [
     focus: 'Casi · Evoluzione, enzimi, celebri',
     morning: [
       a('d7-m1', 'Secondo caso completo (Spike, GFP o Amilasi)', 'home'),
-      a('d7-m2', 'Ripeti i tre gesti (dalla proteina 3D)', 'protein', true),
+      // Il gradino verso il progetto: qui la domanda la scrivono loro PRIMA di
+      // leggere la nostra. È l'ultima volta con la rete sotto.
+      a('d7-m2', 'Scrivete voi la domanda, poi i tre gesti', 'protein', true),
     ],
     afternoon: [
       a('d7-p1', 'Conclusione del dossier con il tutor', 'dossier', true),
@@ -158,8 +160,8 @@ export const DAYS: CourseDay[] = [
     title: 'Il vostro progetto: si parte',
     focus: 'Modalità libera',
     morning: [
-      a('d8-m1', 'Scegli gene/proteina (UniProt)', 'libera'),
-      a('d8-m2', 'Formula la domanda e verifica', 'libera'),
+      a('d8-m1', 'Cercate la vostra proteina su UniProt, dentro l’app', 'libera'),
+      a('d8-m2', 'La domanda del progetto (obbligatoria)', 'libera'),
     ],
     afternoon: [
       a('d8-p1', 'Osserva la proteina del progetto in 3D', 'protein', true),

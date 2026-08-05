@@ -21,6 +21,11 @@ import { fetchAlphaFoldModel, NoStructureError } from '../lib/alphafold';
 import { SCREEN_BRIEFINGS } from '../data/tutorBriefings';
 import { teamWritingContext } from '../lib/teamContext';
 import { giaVistoNelGiorno0 } from '../lib/progresso';
+import {
+  GradinoDomanda,
+  serveIlGradino,
+  TITOLO_DOMANDA_PROPRIA,
+} from '../components/GradinoDomanda';
 import { LEGGERE_LA_3D } from '../data/guardare';
 import { askTutorProactive } from '../lib/ai';
 import {
@@ -108,6 +113,23 @@ export function Protein({ onNavigate }: { onNavigate: (p: PageId) => void }) {
     }
   }
 
+  // Il gradino di autonomia sulla domanda (ultima indagine preparata): la
+  // decisione si prende all'APERTURA del caso e non cambia più. Rivalutarla a
+  // ogni render la farebbe sparire da sotto le mani nell'istante in cui la
+  // squadra salva la propria domanda nel dossier.
+  const [gradinoPer, setGradinoPer] = useState<string | null>(null);
+  const [domandaSvelata, setDomandaSvelata] = useState(false);
+  const casoId = currentCase?.id;
+  useEffect(() => {
+    setDomandaSvelata(false);
+    setGradinoPer(
+      currentCase && serveIlGradino(currentCase, dossier) ? currentCase.id : null,
+    );
+    // Solo su casoId, di proposito: vedi sopra.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [casoId]);
+  const gradino = !!currentCase && gradinoPer === currentCase.id;
+
   const uniprot = currentCase?.protein.uniprot;
 
   useEffect(() => {
@@ -145,7 +167,11 @@ export function Protein({ onNavigate }: { onNavigate: (p: PageId) => void }) {
         SCREEN_BRIEFINGS.protein,
         teamWritingContext(dossier, currentCase?.id, draft),
         `Caso: ${currentCase.title}`,
-        `Domanda biologica: ${currentCase.question}`,
+        // Finché la squadra non ha scritto la propria domanda, la nostra resta
+        // coperta anche per il tutor: altrimenti basterebbe chiedergliela.
+        gradino && !domandaSvelata
+          ? "La domanda dell'indagine è ancora coperta: la squadra la sta formulando da sé. NON suggerirne una tua e non svelare quella del caso."
+          : `Domanda biologica: ${currentCase.question}`,
         `Proteina mostrata in 3D: ${model.proteinName ?? currentCase.protein.name}`,
         `UniProt ID: ${model.uniprot}`,
         model.organism ? `Organismo: ${model.organism}` : '',
@@ -170,6 +196,22 @@ export function Protein({ onNavigate }: { onNavigate: (p: PageId) => void }) {
         dek="Dalla sequenza, l'app recupera da AlphaFold DB la struttura 3D già calcolata e la mostra ruotabile. La struttura è vera; il tutor la racconta."
       />
 
+      {gradino && (
+        <GradinoDomanda
+          caso={currentCase}
+          onSalva={(testo) => {
+            addEntry({
+              caseId: currentCase.id,
+              kind: 'domanda',
+              title: TITOLO_DOMANDA_PROPRIA,
+              body: testo,
+            });
+            setDomandaSvelata(true);
+          }}
+        />
+      )}
+
+      {(!gradino || domandaSvelata) && (
       <FiloDellIndagine
         domanda={currentCase.question}
         passo="Primo dei tre gesti"
@@ -179,6 +221,7 @@ export function Protein({ onNavigate }: { onNavigate: (p: PageId) => void }) {
             : "Prima di capire che cosa la mutazione manda in tilt, bisogna vedere che cosa c'è da mandare in tilt. Qui non rispondete ancora alla domanda: guardate la macchina in gioco."
         }
       />
+      )}
 
       {loading && (
         <div className="molstar-wrap flex items-center justify-center text-[#e8e0d4] font-mono text-sm">

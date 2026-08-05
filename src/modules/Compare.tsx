@@ -17,6 +17,11 @@ import {
 } from '../components/ui';
 import { AiTutor } from '../components/AiTutor';
 import { alignSequences, describeDifferences, MAX_SEQ_LENGTH } from '../lib/alignment';
+import {
+  confrontaProteine,
+  differenzeProteiche,
+  distribuzioneDifferenze,
+} from '../lib/proteine';
 import { SCREEN_BRIEFINGS } from '../data/tutorBriefings';
 import { LEGGERE_ALLINEAMENTO } from '../data/guardare';
 import { askTutorProactive } from '../lib/ai';
@@ -83,6 +88,11 @@ export function Compare({ onNavigate }: { onNavigate: (p: PageId) => void }) {
         </p>
       </div>
     );
+  }
+  // Nessuna coppia di DNA: se la squadra ha scelto due proteine (modalità
+  // libera), si confrontano gli amminoacidi. Non si costruisce DNA finto.
+  if ((!a || !b || !result) && (currentCase.proteine?.length ?? 0) >= 2) {
+    return <ConfrontoProteico onNavigate={onNavigate} />;
   }
   if (!a || !b || !result) {
     return (
@@ -517,5 +527,258 @@ function SeqRow({ seq, match }: { seq: string; match: string }) {
         );
       })}
     </span>
+  );
+}
+
+/**
+ * Confronto fra due sequenze PROTEICHE (modalità libera).
+ *
+ * UniProt non contiene DNA: se la squadra ha scelto liberamente la sua
+ * proteina, le due sequenze confrontabili sono amminoacidiche. Sono reali,
+ * prese da UniProt — mai ricostruite dalla proteina, che sarebbe inventarle.
+ * Si perdono codoni e frameshift (restano il lavoro dei giorni sui casi curati,
+ * dove il DNA c'è davvero) ma si guadagna la domanda evolutiva: quanto si
+ * somiglia questa proteina in due specie diverse?
+ */
+function ConfrontoProteico({ onNavigate }: { onNavigate: (p: PageId) => void }) {
+  const { currentCase, addEntry, dossier } = useStore();
+  const [draft, setDraft] = useState('');
+  const [reazione, setReazione] = useState<string | null>(null);
+  const [reazioneInCorso, setReazioneInCorso] = useState(false);
+  const ctxRef = useRef('');
+
+  const p1 = currentCase?.proteine?.[0];
+  const p2 = currentCase?.proteine?.[1];
+  const c = useMemo(
+    () => (p1 && p2 ? confrontaProteine(p1.seq, p2.seq, p1.label, p2.label) : null),
+    [p1, p2],
+  );
+  const diff = useMemo(() => (c ? differenzeProteiche(c) : null), [c]);
+  const dist = useMemo(() => (c ? distribuzioneDifferenze(c) : null), [c]);
+
+  async function chiediReazione(testo: string) {
+    setReazioneInCorso(true);
+    try {
+      const r = await askTutorProactive({
+        phase: 'Modulo · Confronto fra due proteine',
+        teamInput: testo,
+        brief: ctxRef.current,
+      });
+      if (r) setReazione(r);
+    } catch {
+      /* il lavoro resta salvato comunque */
+    } finally {
+      setReazioneInCorso(false);
+    }
+  }
+
+  if (!currentCase || !c || !diff || !dist || !p1 || !p2) {
+    return <NoCaseNotice moduleLabel="Modulo 2" onNavigate={onNavigate} />;
+  }
+
+  const dove =
+    dist.inizio >= dist.centro && dist.inizio >= dist.fine
+      ? "all'inizio"
+      : dist.fine >= dist.centro
+        ? 'verso la fine'
+        : 'nella parte centrale';
+
+  const aiContext = [
+    SCREEN_BRIEFINGS.compare,
+    teamWritingContext(dossier, currentCase.id, draft),
+    `Caso (indagine libera): ${currentCase.title}`,
+    `Domanda della squadra: ${currentCase.question}`,
+    `Confronto fra SEQUENZE PROTEICHE reali prese da UniProt (non DNA: UniProt non ne contiene).`,
+    `"${p1.label}" (${p1.uniprot}, ${p1.seq.length} amminoacidi) e "${p2.label}" (${p2.uniprot}, ${p2.seq.length} amminoacidi)`,
+    `Identità: ${c.identitaPct}% (${c.identici} posizioni identiche su ${c.lunghezzaAllineata})`,
+    `Amminoacidi diversi: ${c.diversi} · posizioni con buco (gap): ${c.gap}`,
+    `Le differenze si concentrano ${dove} (inizio ${dist.inizio}, centro ${dist.centro}, fine ${dist.fine}).`,
+    diff.elenco.length
+      ? `Prime differenze calcolate dall'algoritmo: ${diff.elenco
+          .map((d) => `pos ${d.posizione} ${d.daNome}→${d.aNome}`)
+          .join('; ')}`
+      : 'Le due proteine sono identiche.',
+  ]
+    .filter(Boolean)
+    .join('\n');
+  ctxRef.current = aiContext;
+
+  return (
+    <div className="fade-up">
+      <Stepper current="compare" onNavigate={onNavigate} />
+      <PageHeader
+        eyebrow="Modulo 2 · Confrontare due proteine"
+        title={
+          <>
+            Trova le <em className="text-accent not-italic italic">differenze</em>
+          </>
+        }
+        dek="Il vostro progetto confronta due proteine vere, amminoacido per amminoacido. Le sequenze vengono da UniProt: l'app le allinea, voi le interpretate."
+      />
+
+      <FiloDellIndagine
+        domanda={currentCase.question}
+        passo="Secondo dei tre gesti"
+        contributo="Avete scelto voi queste due proteine. Adesso l'app le mette una sopra l'altra e misura quanto si somigliano: è da qui che nascono le risposte sull'evoluzione."
+      />
+
+      <Fase
+        n={1}
+        titolo="Quanto si somigliano"
+        perche="Prima il numero d'insieme: due proteine possono essere quasi gemelle o quasi estranee, e cambia tutto il significato di ciò che troverete dopo."
+      >
+        <div className="flex flex-wrap gap-6 mb-4">
+          <Stat value={`${c.identitaPct}%`} label="identità" />
+          <Stat value={c.identici} label="amminoacidi uguali" />
+          <Stat value={c.diversi} label="diversi" />
+          <Stat value={c.gap} label="gap" />
+        </div>
+        <div className="text-[13px] text-ink-light space-y-1">
+          <div>
+            <span className="font-mono text-accent font-bold">A</span> = {p1.label}{' '}
+            <span className="text-ink-muted">({p1.uniprot} · {p1.seq.length} aa)</span>
+          </div>
+          <div>
+            <span className="font-mono text-accent font-bold">B</span> = {p2.label}{' '}
+            <span className="text-ink-muted">({p2.uniprot} · {p2.seq.length} aa)</span>
+          </div>
+        </div>
+      </Fase>
+
+      <Fase
+        n={2}
+        titolo="Che cosa hai davanti"
+        perche="Qui non ci sono le lettere del DNA: ci sono direttamente gli amminoacidi, cioè i pezzi di cui la proteina è fatta. Ecco come si legge."
+      >
+        <CosaStaiGuardando
+          voci={[
+            {
+              termine: 'Ogni lettera',
+              spiegazione:
+                'è un amminoacido, un pezzo della proteina — non una base del DNA. M sta per metionina, V per valina, e così via.',
+            },
+            {
+              termine: 'La percentuale di identità',
+              spiegazione:
+                'dice quante posizioni sono uguali nelle due proteine. Più è alta, più le due specie sono imparentate su questa proteina.',
+            },
+            {
+              termine: 'Perché amminoacidi e non DNA',
+              spiegazione:
+                'UniProt è la banca dati delle proteine e il DNA non ce l’ha: sta in altre banche (ENA, GenBank). Confrontiamo quindi ciò che è davvero disponibile, senza inventare nulla.',
+            },
+          ]}
+          cerca={`guardate dove cadono le differenze: qui si concentrano ${dove}. Le parti che restano uguali di solito sono quelle che la natura non può permettersi di cambiare.`}
+        />
+      </Fase>
+
+      <Fase
+        n={3}
+        titolo="La scoperta"
+        perche="Ecco cosa dicono i numeri sulla domanda che vi siete posti: dove le due proteine hanno preso strade diverse, e dove invece l'evoluzione non ha toccato nulla."
+      >
+        <div className="rounded-xl bg-ink text-paper px-7 py-6">
+          <div className="font-mono text-[10px] tracking-[.2em] uppercase text-[#e8935f] mb-3">
+            La scoperta · {diff.totale}{' '}
+            {diff.totale === 1 ? 'amminoacido diverso' : 'amminoacidi diversi'}
+          </div>
+          <p className="text-[15px] text-[#ece4d7] leading-relaxed">
+            Le due proteine combaciano al <strong>{c.identitaPct}%</strong>. Le
+            differenze si concentrano <strong>{dove}</strong>: {dist.inizio} nella
+            prima parte, {dist.centro} in mezzo, {dist.fine} nell'ultima.
+          </p>
+          {diff.elenco.length > 0 && (
+            <div className="mt-4 space-y-1.5">
+              {diff.elenco.map((d) => (
+                <div key={d.posizione} className="text-[14px] text-[#c9bfb4]">
+                  <span className="font-mono text-[#e8935f]">pos {d.posizione}</span>{' '}
+                  {d.daNome} → {d.aNome}
+                </div>
+              ))}
+              {diff.totale > diff.elenco.length && (
+                <p className="text-[13px] text-[#8a7f73] italic pt-1">
+                  …e altre {diff.totale - diff.elenco.length}. Quello che conta non è
+                  l'elenco: è quanto e dove.
+                </p>
+              )}
+            </div>
+          )}
+        </div>
+      </Fase>
+
+      <Fase
+        n={4}
+        titolo="Scrivi cosa hai capito"
+        perche="I numeri sono vostri: adesso l'interpretazione. È la parte che porterete alla giuria, e nessun algoritmo può farla al posto vostro."
+      >
+        <ProjectWork
+          onDraft={setDraft}
+          consegna={`Rispondete alla vostra domanda con questi dati: ${c.identitaPct}% di identità vi sembra tanto o poco? Cosa dice sulla parentela fra le due, e perché secondo voi certe parti sono rimaste uguali?`}
+          onSave={(txt) => {
+            addEntry({
+              kind: 'confronto',
+              title: 'Project work · Confronto fra due proteine',
+              body: txt,
+              data: {
+                a: p1.uniprot,
+                b: p2.uniprot,
+                identitaPct: c.identitaPct,
+                diversi: c.diversi,
+              },
+            });
+            chiediReazione(txt);
+          }}
+        />
+        {reazioneInCorso && (
+          <p className="text-[13.5px] text-ink-muted italic mt-2">
+            Il tutor sta leggendo quello che avete scritto…
+          </p>
+        )}
+      </Fase>
+
+      <Fase
+        n={5}
+        titolo="Parlane con il tutor"
+        perche="Ha davanti l'allineamento calcolato e quello che avete scritto voi."
+      >
+        <AiTutor
+          title="Il tutor interpreta il confronto"
+          cardine="Guardate dove cadono le differenze e dove invece le due proteine restano identiche. Secondo voi perché certe parti non cambiano mai, nemmeno fra specie lontane?"
+          context={aiContext}
+          reazione={reazione ?? undefined}
+          intro={`Ho allineato "${p1.label}" e "${p2.label}": combaciano al ${c.identitaPct}%. Chiedimi cosa significa.`}
+          suggestions={[
+            'Questo numero è alto o basso?',
+            'Perché certe parti restano uguali?',
+            'Cosa dice sulla parentela fra le due specie?',
+          ]}
+        />
+        <div className="mt-4">
+          <AddToDossierButton
+            onAdd={() =>
+              addEntry({
+                kind: 'confronto',
+                title: `Confronto: ${p1.label} vs ${p2.label}`,
+                body: `Ho confrontato le sequenze proteiche reali di ${p1.label} (${p1.uniprot}) e ${p2.label} (${p2.uniprot}): combaciano al ${c.identitaPct}%, con ${c.diversi} amminoacidi diversi concentrati ${dove}.`,
+                data: {
+                  a: p1.uniprot,
+                  b: p2.uniprot,
+                  identitaPct: c.identitaPct,
+                  fonte: 'UniProt (sequenze proteiche reali)',
+                },
+              })
+            }
+          />
+        </div>
+      </Fase>
+
+      <ProssimoPasso
+        fatto="Avete confrontato due proteine vere e interpretato il risultato."
+        ora="Il vostro dossier ha ora la parte che risponde alla domanda: rileggetelo e completatelo."
+        azione="Vai al dossier"
+        onGo={() => onNavigate('dossier')}
+        alternativa={{ testo: 'torna alla proteina 3D', onGo: () => onNavigate('protein') }}
+      />
+    </div>
   );
 }
