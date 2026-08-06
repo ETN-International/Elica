@@ -12,7 +12,18 @@ export type MutationCategory =
   | 'frameshift'
   | 'inframe-indel'
   /** Più mutazioni sovrapposte: l'effetto non è riconducibile a un tipo solo. */
-  | 'multipla';
+  | 'multipla'
+  /**
+   * Il codone d'inizio ATG è stato distrutto.
+   *
+   * Ha precedenza assoluta su ogni altra classificazione. Prima veniva
+   * classificata come una qualunque sostituzione — "missenso, la proteina è
+   * leggermente diversa" — che è biologicamente falso: senza ATG la cellula non
+   * sa da dove cominciare a leggere e quella proteina non viene prodotta.
+   * Peggio: il Giorno 4 il lab insegna che «ATG è il segnale di partenza», e il
+   * giorno dopo lasciava distruggerlo senza dire nulla.
+   */
+  | 'perdita-inizio';
 
 export interface MutationEffect {
   /** Proteina originale (codice a una lettera). */
@@ -27,29 +38,88 @@ export interface MutationEffect {
 
 const CYCLE = ['A', 'T', 'G', 'C'];
 
-/** Applica una modifica puntuale alla sequenza e restituisce la nuova sequenza. */
+/** Il codone d'inizio: senza questo la traduzione non parte. */
+const START = 'ATG';
+
+/**
+ * Applica una modifica puntuale alla sequenza e restituisce la nuova sequenza.
+ *
+ * `base` sceglie in che cosa trasformare (o che cosa inserire). Senza, la
+ * sostituzione cicla A→T→G→C come prima: era l'unico modo disponibile, e
+ * rendeva quasi impossibile cercare di proposito una mutazione silente.
+ */
 export function applyMutation(
   dna: string,
   index: number,
   op: MutationOp,
+  base?: string,
 ): string {
   const seq = cleanDna(dna).replace(/-/g, '').split('');
   if (index < 0 || index >= seq.length) return seq.join('');
+  const scelta = base && CYCLE.includes(base) ? base : undefined;
   switch (op) {
     case 'sostituisci': {
       const cur = seq[index];
-      const next = CYCLE[(CYCLE.indexOf(cur) + 1) % CYCLE.length] || 'A';
-      seq[index] = next;
+      seq[index] = scelta ?? CYCLE[(CYCLE.indexOf(cur) + 1) % CYCLE.length] ?? 'A';
       return seq.join('');
     }
     case 'inserisci':
-      seq.splice(index, 0, 'A');
+      seq.splice(index, 0, scelta ?? 'A');
       return seq.join('');
     case 'elimina':
       seq.splice(index, 1);
       return seq.join('');
     default:
       return seq.join('');
+  }
+}
+
+/**
+ * Un segno visibile per ogni modifica che la squadra ha davvero applicato.
+ *
+ * Prima le basi si coloravano confrontando posizione per posizione
+ * (`original[i] !== base`). Funziona per le sostituzioni; dopo un'inserzione o
+ * una delezione è FALSO, perché tutto ciò che sta a valle slitta di posizione e
+ * risulta "diverso" pur essendo la stessa base di prima. Misurato: inserendo una
+ * sola base in posizione 4 di una sequenza di 25, se ne accendevano 19.
+ *
+ * Le posizioni sono espresse nella sequenza CORRENTE e si aggiornano a ogni
+ * modifica, così un segno resta attaccato alla base che la squadra ha toccato.
+ */
+export interface SegnoModifica {
+  pos: number;
+  tipo: MutationOp;
+}
+
+export function aggiornaSegni(
+  segni: SegnoModifica[],
+  index: number,
+  op: MutationOp,
+  lunghezzaDopo: number,
+): SegnoModifica[] {
+  switch (op) {
+    case 'sostituisci':
+      return [...segni.filter((s) => s.pos !== index), { pos: index, tipo: op }];
+    case 'inserisci':
+      return [
+        ...segni.map((s) => (s.pos >= index ? { ...s, pos: s.pos + 1 } : s)),
+        { pos: index, tipo: op },
+      ];
+    case 'elimina': {
+      // La base cancellata non esiste più: il segno resta sul punto del taglio,
+      // cioè sulla base che adesso occupa quella posizione. Se si è cancellata
+      // l'ultima, il segno scivola su quella che la precedeva.
+      const punto = Math.max(0, Math.min(index, lunghezzaDopo - 1));
+      return [
+        ...segni
+          .filter((s) => s.pos !== index)
+          .map((s) => (s.pos > index ? { ...s, pos: s.pos - 1 } : s))
+          .filter((s) => s.pos !== punto),
+        { pos: punto, tipo: op },
+      ];
+    }
+    default:
+      return segni;
   }
 }
 
@@ -67,10 +137,55 @@ function commonFlanks(a: string, b: string): { pre: number; suf: number } {
   return { pre, suf };
 }
 
-/** Classifica l'effetto della mutazione confrontando le due proteine tradotte. */
+/**
+ * Classifica l'effetto della mutazione.
+ *
+ * Fa da guscio a `classificaBase`, che contiene la logica verificata e non si
+ * tocca. Qui stanno soltanto le due cose che quella logica non poteva vedere:
+ * la perdita del codone d'inizio (che ha precedenza su tutto) e la perdita del
+ * codone di STOP (che non merita una categoria propria, ma va detta).
+ */
 export function classifyMutation(original: string, mutated: string): MutationEffect {
   const o = cleanDna(original).replace(/-/g, '');
   const m = cleanDna(mutated).replace(/-/g, '');
+
+  // ── Precedenza assoluta: senza ATG non parte niente ────────────────────
+  // Va controllata PRIMA di ogni altra cosa, come già accade per lo STOP
+  // prematuro. Mostriamo comunque l'esito della traduzione, ma dichiarandolo
+  // per quello che è: un'ipotesi di laboratorio, non ciò che farebbe la cellula.
+  if (o !== m && o.startsWith(START) && !m.startsWith(START)) {
+    return {
+      originalProtein: translate(o),
+      mutatedProtein: translate(m),
+      category: 'perdita-inizio',
+      firstChangedCodon: 1,
+      note:
+        'Avete cambiato il segnale di partenza. Le prime tre lettere erano ATG: è il «via» che dice alla cellula da dove cominciare a leggere. Senza, questa proteina non verrebbe prodotta affatto — oppure la lettura partirebbe da un ATG più avanti, dando qualcosa di completamente diverso e più corto. Qui sotto vi mostriamo lo stesso che cosa uscirebbe leggendo dal punto di prima, ma è un\'ipotesi di laboratorio: nella cellula non accadrebbe.',
+    };
+  }
+
+  const effetto = classificaBase(o, m);
+
+  // ── In tono minore: il segnale di fine ─────────────────────────────────
+  // Se la squadra distrugge lo STOP la traduzione tira dritto fino in fondo
+  // all'estratto e l'effetto mostrato è vicino al vero — ma va detto che nella
+  // cellula la lettura proseguirebbe oltre, dentro ciò che viene dopo il gene.
+  if (
+    effetto.category !== 'nessuna' &&
+    effetto.originalProtein.includes('*') &&
+    !effetto.mutatedProtein.includes('*')
+  ) {
+    return {
+      ...effetto,
+      note: `${effetto.note} In più è sparito il segnale di STOP, cioè il «fine corsa»: nella cellula la lettura non si fermerebbe qui, andrebbe avanti oltre il gene.`,
+    };
+  }
+
+  return effetto;
+}
+
+/** La logica verificata: non si tocca. */
+function classificaBase(o: string, m: string): MutationEffect {
   const originalProtein = translate(o);
   const mutatedProtein = translate(m);
 
@@ -191,4 +306,5 @@ export const CATEGORY_STYLE: Record<
   frameshift: { label: 'Frameshift', color: 'var(--color-accent)' },
   'inframe-indel': { label: 'Indel in-frame', color: 'var(--color-accent-3)' },
   multipla: { label: 'Mutazioni multiple', color: 'var(--color-ink-light)' },
+  'perdita-inizio': { label: 'Partenza distrutta', color: 'var(--color-accent)' },
 };

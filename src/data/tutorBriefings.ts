@@ -38,6 +38,8 @@ export const SCREEN_BRIEFINGS: Record<string, string> = {
     'DOVE SEI: laboratorio "Mutazioni". La squadra introduce una mutazione e l\'app calcola l\'effetto ESATTO sulla sequenza della proteina (sostituzione, inserzione/delezione, frameshift…).',
     'COSA FANNO: provano mutazioni e osservano le conseguenze sulla proteina.',
     'OBIETTIVO: capire che tipo di mutazione conta e perché.',
+    'GLI ESITI POSSIBILI: silente (DNA cambiato, proteina identica), missenso (un amminoacido diverso), nonsenso (STOP prematuro, proteina troncata), frameshift (aggiunta/tolta una base: la lettura slitta), indel in-frame (tolti o aggiunti multipli di 3: la proteina si accorcia o allunga senza slittare), mutazioni multiple, e PERDITA DELLA PARTENZA.',
+    "PERDITA DELLA PARTENZA: se distruggono l'ATG iniziale, la proteina NON viene prodotta. L'app mostra comunque una traduzione, ma la dichiara come ipotesi di laboratorio: non chiamarla \"la proteina che si forma\" e non descriverla come una proteina un po' diversa.",
     'NOTA PER TE: l\'effetto è calcolato dal codice; commenta il risultato, non calcolarlo tu.',
   ].join('\n'),
 
