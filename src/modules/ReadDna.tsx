@@ -29,13 +29,20 @@ import {
   translateCodon,
 } from '../lib/dna';
 import { SCREEN_BRIEFINGS } from '../data/tutorBriefings';
-import { DomandaCoperta, serveIlGradino } from '../components/GradinoDomanda';
+import {
+  GradinoDomanda,
+  useGradino,
+  TITOLO_DOMANDA_PROPRIA,
+} from '../components/GradinoDomanda';
 import { LEGGERE_CODONI } from '../data/guardare';
 import { askTutorProactive } from '../lib/ai';
 import { teamWritingContext } from '../lib/teamContext';
 
 export function ReadDna({ onNavigate }: { onNavigate: (p: PageId) => void }) {
   const { currentCase, addEntry, dossier } = useStore();
+  // Il gradino di autonomia: lo ospita la prima schermata che la squadra apre,
+  // quindi anche questa. Il hook va chiamato prima di qualunque return anticipato.
+  const gradino = useGradino(currentCase, dossier);
   const [draft, setDraft] = useState('');
   // La risposta del tutor a quello che la squadra scrive nel project work.
   const [reazione, setReazione] = useState<string | null>(null);
@@ -113,18 +120,13 @@ export function ReadDna({ onNavigate }: { onNavigate: (p: PageId) => void }) {
 
   const allGood = quality.every((q) => q.ok);
 
-  // Il gradino di autonomia vive nel Modulo 1, ma la domanda deve restare
-  // coperta anche qui: lo Stepper permette di saltare direttamente a questo
-  // modulo, e la vedrebbero in chiaro prima di aver scritto la loro.
-  const coperta = serveIlGradino(currentCase, dossier);
-
   const aiContext = [
     SCREEN_BRIEFINGS.dna,
     teamWritingContext(dossier, currentCase?.id, draft),
     `Caso: ${currentCase.title}`,
     // Coperta anche per il tutor finché la squadra non ha scritto la sua:
     // altrimenti basterebbe chiedergliela in chat.
-    coperta
+    gradino.coperta
       ? "La domanda dell'indagine è ancora coperta: la squadra la sta formulando da sé nel Modulo 1. NON svelarla e non proporne una tua."
       : `Domanda biologica: ${currentCase.question}`,
     `Sequenza scelta: ${seq.label}`,
@@ -152,9 +154,22 @@ export function ReadDna({ onNavigate }: { onNavigate: (p: PageId) => void }) {
         dek="Scegli una sequenza del caso, guardala in modo leggibile e falla spiegare al tutor. Nessun file da capire, nessun upload."
       />
 
-      {coperta ? (
-        <DomandaCoperta onGo={() => onNavigate('protein')} />
-      ) : (
+      {gradino.attivo && (
+        <GradinoDomanda
+          caso={currentCase}
+          onSalva={(testo) => {
+            addEntry({
+              caseId: currentCase.id,
+              kind: 'domanda',
+              title: TITOLO_DOMANDA_PROPRIA,
+              body: testo,
+            });
+            gradino.svela();
+          }}
+        />
+      )}
+
+      {!gradino.coperta && (
         <FiloDellIndagine
           domanda={currentCase.question}
           passo="Terzo dei tre gesti"

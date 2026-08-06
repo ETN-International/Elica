@@ -2,6 +2,7 @@ import type { PageId } from '../App';
 import { THEMES, casesByTheme } from '../data/cases';
 import { useStore } from '../store';
 import { PageHeader, Note, Difficulty } from '../components/ui';
+import { casiSvolti } from '../lib/progresso';
 
 export function Home({ onNavigate }: { onNavigate: (p: PageId) => void }) {
   const { currentCase, selectCase, dossier, progress } = useStore();
@@ -39,6 +40,18 @@ export function Home({ onNavigate }: { onNavigate: (p: PageId) => void }) {
   ];
   const prossimo = passi.find((p) => !p.fatto);
 
+  /**
+   * Il cambio di passo, dichiarato.
+   *
+   * Dalla terza indagine in poi il percorso non introduce più gesti nuovi: la
+   * squadra rifà gli stessi tre su casi diversi. È didatticamente giusto — la
+   * padronanza si costruisce ripetendo su materiale nuovo — ma l'app continuava
+   * a chiamarla scoperta, e lo studente sentiva lo scarto: «il caso è diverso ma
+   * io faccio le stesse cose, e ormai le faccio senza pensarci». Dirlo cambia
+   * l'esperienza senza cambiare l'attività: non è più ripetizione, è autonomia.
+   */
+  const cambioDiPasso = casiSvolti(dossier) >= 3;
+
   return (
     <div className="fade-up">
       <PageHeader
@@ -50,6 +63,31 @@ export function Home({ onNavigate }: { onNavigate: (p: PageId) => void }) {
         }
         dek="Scegli un'indagine, guarda la proteina in 3D, confronta i geni e leggi il DNA. L'AI ti guida; i dati esatti vengono da banche scientifiche vere."
       />
+
+      {/* Volutamente indipendente dalla bussola d'avvio: una squadra che ha già
+          fatto tre indagini deve vedere il cambio di passo anche se, per come è
+          andata l'aula, si è saltata un pezzo dell'avvio. */}
+      {cambioDiPasso && (
+        <div className="rounded-xl border border-accent-3/30 bg-[rgba(45,74,138,.06)] px-5 py-5 mb-8">
+          <div className="font-mono text-[9.5px] tracking-[.18em] uppercase text-accent-3 mb-2">
+            Il percorso cambia passo
+          </div>
+          <p className="font-serif text-[22px] text-ink leading-snug mb-2">
+            Da qui in poi non vi insegniamo più niente di nuovo.
+          </p>
+          <p className="text-[15px] text-ink-light">
+            I tre gesti li conoscete: guardare la forma, confrontare le sequenze,
+            leggere le lettere. Nelle prossime indagini non cambiano gli
+            strumenti — cambia chi li usa. Prima ve li mettevamo in mano noi, uno
+            alla volta, spiegandoli; adesso è la squadra a decidere da quale
+            partire e perché.
+          </p>
+          <p className="text-[15px] text-ink-light mt-2">
+            Se una spiegazione vi serve ancora, c'è: i riquadri «Che cosa stai
+            guardando» ora sono chiusi, e si aprono solo se li aprite voi.
+          </p>
+        </div>
+      )}
 
       {/* Bussola d'avvio: sempre visibile finché il giro non è completo. */}
       {prossimo && (

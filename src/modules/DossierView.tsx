@@ -16,6 +16,7 @@ import type { DossierEntry } from '../types';
 import { SCREEN_BRIEFINGS } from '../data/tutorBriefings';
 
 const KIND_LABEL: Record<DossierEntry['kind'], string> = {
+  insieme: 'Fra le squadre',
   domanda: 'La domanda',
   dna: 'La sequenza',
   confronto: 'Il confronto',

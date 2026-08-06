@@ -130,14 +130,20 @@ export const DAYS: CourseDay[] = [
     title: 'Indagine completa I',
     focus: 'Casi · Malattie genetiche',
     morning: [
+      // Da qui il percorso non introduce più gesti nuovi. Dirlo cambia
+      // l'esperienza senza cambiare l'attività: non è ripetizione, è autonomia.
+      a('d6-m0', 'Il percorso cambia passo: da qui decidete voi', 'home'),
       a('d6-m1', 'Scegli un caso (Fibrosi cistica o Huntington)', 'home'),
-      a('d6-m2', 'I tre gesti in fila: osserva 3D → confronta → leggi', 'protein', true),
+      a('d6-m2', "I tre gesti, nell'ordine che scegliete voi", 'protein', true),
     ],
     afternoon: [
       a('d6-p1', 'Costruisci il dossier del caso', 'dossier', true),
       a('d6-p2', 'Scrivi le prime conclusioni', 'dossier', true),
+      // Il primo pubblico che non è il tutor. Prima arrivava solo al G10.
+      a('d6-p3', "Raccontate il vostro caso a un'altra squadra", 'insieme'),
     ],
-    output: a('d6-out', 'Output: un dossier di caso quasi completo', 'dossier', true),
+    // Non tutte le giornate devono chiudersi scrivendo nel dossier.
+    output: a('d6-out', 'Output: il caso spiegato a voce a chi non lo conosceva', 'insieme'),
   },
   {
     n: 7,
@@ -145,13 +151,14 @@ export const DAYS: CourseDay[] = [
     focus: 'Casi · Evoluzione, enzimi, celebri',
     morning: [
       a('d7-m1', 'Secondo caso completo (Spike, GFP o Amilasi)', 'home'),
-      // Il gradino verso il progetto: qui la domanda la scrivono loro PRIMA di
-      // leggere la nostra. È l'ultima volta con la rete sotto.
-      a('d7-m2', 'Scrivete voi la domanda, poi i tre gesti', 'protein', true),
+      // Ordine invertito di proposito: stesso lavoro, sequenza diversa. Rompe
+      // l'automatismo e obbliga a ragionare sul perché di quell'ordine.
+      a('d7-m2', 'Scrivete voi la domanda, poi partite dalle lettere', 'dna', true),
     ],
     afternoon: [
-      a('d7-p1', 'Conclusione del dossier con il tutor', 'dossier', true),
-      a('d7-p2', 'Quiz «Metodo: AI e dati veri»', 'quiz'),
+      a('d7-p1', 'Risalite dalle lettere alla forma: i gesti al contrario', 'protein', true),
+      a('d7-p2', 'Conclusione del dossier con il tutor', 'dossier', true),
+      a('d7-p3', 'Quiz «Metodo: AI e dati veri»', 'quiz'),
     ],
     output: a('d7-out', 'Output: primo dossier finito', 'dossier', true),
   },
@@ -166,6 +173,7 @@ export const DAYS: CourseDay[] = [
     afternoon: [
       a('d8-p1', 'Osserva la proteina del progetto in 3D', 'protein', true),
       a('d8-p2', 'Imposta il dossier di progetto', 'dossier', true),
+      a('d8-p3', 'Appendete la scoperta di oggi alla parete comune', 'insieme'),
     ],
     output: a('d8-out', 'Output: progetto impostato (domanda + primi dati)', 'dossier', true),
   },
@@ -178,22 +186,28 @@ export const DAYS: CourseDay[] = [
       a('d9-m2', 'Interpretazione con il tutor', 'protein', true),
     ],
     afternoon: [
-      a('d9-p1', 'Completa il dossier di progetto', 'dossier', true),
-      a('d9-p2', 'Scrivi la conclusione', 'dossier', true),
+      // Meglio di una prova generale: qualcuno legge davvero il vostro lavoro e
+      // vi dice, sotto forma di domanda, quale pezzo non si capisce.
+      a('d9-p1', "Revisione incrociata: due domande da un'altra squadra", 'insieme'),
+      a('d9-p2', 'Rispondete a quelle due domande nel dossier', 'dossier', true),
+      // Lavoro vero che non è scrittura: il G9 era per tre quinti testo.
+      a('d9-p3', 'Provate a voce: chi dice cosa, con la rubrica sott’occhio', 'valutazione'),
     ],
-    output: a('d9-out', 'Output: dossier di progetto completo', 'dossier', true),
+    output: a('d9-out', 'Output: dossier di progetto completo e provato a voce', 'dossier', true),
   },
   {
     n: 10,
     title: 'La giuria',
     focus: 'Dossier, quiz e giuria',
     morning: [
-      a('d10-m1', 'Rifinisci ed esporta il dossier', 'dossier', true),
-      a('d10-m2', 'Quiz finale e badge', 'valutazione'),
+      a('d10-m1', 'Ultima rifinitura ed esportazione del dossier', 'dossier', true),
+      // La giuria PRIMA della verifica: un gruppo che entra nell'ultimo giorno
+      // da un quiz arriva alla presentazione già spento.
+      a('d10-m2', 'Presentazione alla giuria', 'valutazione'),
     ],
     afternoon: [
-      a('d10-p1', 'Check con la rubrica della giuria', 'valutazione'),
-      a('d10-p2', 'Presentazione alla giuria', 'valutazione'),
+      a('d10-p1', 'Quiz finale e badge', 'valutazione'),
+      a('d10-p2', 'La parete, tutta insieme: cosa vi portate a casa', 'insieme'),
     ],
     output: a('d10-out', 'Output: dossier presentato · tutti i badge', 'valutazione'),
   },

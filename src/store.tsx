@@ -37,6 +37,11 @@ interface Progress {
   mutazioniOttenute: string[];
   /** true quando il dossier è stato esportato almeno una volta. */
   dossierEsportato: boolean;
+  /**
+   * Quante volte la squadra ha premuto "scambiamoci i ruoli". L'app propone la
+   * rotazione, la squadra può correggerla: vedi src/lib/ruoli.ts.
+   */
+  ruoliScambi: number;
 }
 
 function loadCustom(): Case | null {
@@ -70,6 +75,7 @@ function loadProgress(): Progress {
     eserciziRisolti: [],
     mutazioniOttenute: [],
     dossierEsportato: false,
+    ruoliScambi: 0,
   };
   try {
     const raw = localStorage.getItem(PROGRESS_KEY);
@@ -83,6 +89,7 @@ function loadProgress(): Progress {
       eserciziRisolti: p.eserciziRisolti ?? [],
       mutazioniOttenute: p.mutazioniOttenute ?? [],
       dossierEsportato: p.dossierEsportato ?? false,
+      ruoliScambi: p.ruoliScambi ?? 0,
     };
   } catch {
     return empty;
@@ -106,6 +113,8 @@ interface AppStore {
   toggleUnit: (id: string) => void;
   segna: (campo: 'pagesVisited' | 'eserciziRisolti' | 'mutazioniOttenute', id: string) => void;
   segnaEsportato: () => void;
+  /** Ruota di uno l'assegnazione dei ruoli proposta dall'app. */
+  scambiaRuoli: () => void;
 }
 
 const StoreContext = createContext<AppStore | null>(null);
@@ -221,6 +230,10 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
     [],
   );
 
+  const scambiaRuoli = useCallback(() => {
+    setProgress((p) => ({ ...p, ruoliScambi: p.ruoliScambi + 1 }));
+  }, []);
+
   const segnaEsportato = useCallback(() => {
     setProgress((p) => (p.dossierEsportato ? p : { ...p, dossierEsportato: true }));
   }, []);
@@ -251,6 +264,7 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
       toggleUnit,
       segna,
       segnaEsportato,
+      scambiaRuoli,
     }),
     [
       currentCase,
@@ -268,6 +282,7 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
       toggleUnit,
       segna,
       segnaEsportato,
+      scambiaRuoli,
     ],
   );
 

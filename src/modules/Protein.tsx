@@ -23,7 +23,7 @@ import { teamWritingContext } from '../lib/teamContext';
 import { giaVistoNelGiorno0 } from '../lib/progresso';
 import {
   GradinoDomanda,
-  serveIlGradino,
+  useGradino,
   TITOLO_DOMANDA_PROPRIA,
 } from '../components/GradinoDomanda';
 import { LEGGERE_LA_3D } from '../data/guardare';
@@ -113,22 +113,7 @@ export function Protein({ onNavigate }: { onNavigate: (p: PageId) => void }) {
     }
   }
 
-  // Il gradino di autonomia sulla domanda (ultima indagine preparata): la
-  // decisione si prende all'APERTURA del caso e non cambia più. Rivalutarla a
-  // ogni render la farebbe sparire da sotto le mani nell'istante in cui la
-  // squadra salva la propria domanda nel dossier.
-  const [gradinoPer, setGradinoPer] = useState<string | null>(null);
-  const [domandaSvelata, setDomandaSvelata] = useState(false);
-  const casoId = currentCase?.id;
-  useEffect(() => {
-    setDomandaSvelata(false);
-    setGradinoPer(
-      currentCase && serveIlGradino(currentCase, dossier) ? currentCase.id : null,
-    );
-    // Solo su casoId, di proposito: vedi sopra.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [casoId]);
-  const gradino = !!currentCase && gradinoPer === currentCase.id;
+  const gradino = useGradino(currentCase, dossier);
 
   const uniprot = currentCase?.protein.uniprot;
 
@@ -169,8 +154,8 @@ export function Protein({ onNavigate }: { onNavigate: (p: PageId) => void }) {
         `Caso: ${currentCase.title}`,
         // Finché la squadra non ha scritto la propria domanda, la nostra resta
         // coperta anche per il tutor: altrimenti basterebbe chiedergliela.
-        gradino && !domandaSvelata
-          ? "La domanda dell'indagine è ancora coperta: la squadra la sta formulando da sé. NON suggerirne una tua e non svelare quella del caso."
+        gradino.coperta
+          ? "La domanda dell'indagine è ancora coperta: la squadra la sta formulando da sé, qui in questa schermata. NON suggerirne una tua e non svelare quella del caso."
           : `Domanda biologica: ${currentCase.question}`,
         `Proteina mostrata in 3D: ${model.proteinName ?? currentCase.protein.name}`,
         `UniProt ID: ${model.uniprot}`,
@@ -196,7 +181,7 @@ export function Protein({ onNavigate }: { onNavigate: (p: PageId) => void }) {
         dek="Dalla sequenza, l'app recupera da AlphaFold DB la struttura 3D già calcolata e la mostra ruotabile. La struttura è vera; il tutor la racconta."
       />
 
-      {gradino && (
+      {gradino.attivo && (
         <GradinoDomanda
           caso={currentCase}
           onSalva={(testo) => {
@@ -206,12 +191,12 @@ export function Protein({ onNavigate }: { onNavigate: (p: PageId) => void }) {
               title: TITOLO_DOMANDA_PROPRIA,
               body: testo,
             });
-            setDomandaSvelata(true);
+            gradino.svela();
           }}
         />
       )}
 
-      {(!gradino || domandaSvelata) && (
+      {!gradino.coperta && (
       <FiloDellIndagine
         domanda={currentCase.question}
         passo="Primo dei tre gesti"

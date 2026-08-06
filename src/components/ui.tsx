@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import type { PageId } from '../App';
 import { useStore } from '../store';
+import { casiSvolti } from '../lib/progresso';
 
 interface StepDef {
   id: PageId;
@@ -187,10 +188,43 @@ export function CosaStaiGuardando({
   /** L'osservazione da fare subito, per non restare passivi. */
   cerca: string;
 }) {
+  const { dossier } = useStore();
+  /**
+   * Dopo tre indagini queste spiegazioni le sanno. Lo scaffolding che non sfuma
+   * mai smette di aiutare e diventa condiscendenza — è il modo più diretto per
+   * dire a una squadra «non ti considero capace» proprio quando invece lo è
+   * diventata. Da qui in poi il riquadro resta, ma chiuso: chi ha un dubbio lo
+   * apre, gli altri tirano dritto.
+   */
+  const esperti = casiSvolti(dossier) >= 3;
+  const [aperto, setAperto] = useState(!esperti);
+
+  if (!aperto) {
+    return (
+      <button
+        onClick={() => setAperto(true)}
+        className="w-full text-left rounded-xl border border-accent-2/25 bg-[rgba(26,107,82,.03)] px-5 py-2.5 text-[13px] text-ink-muted hover:text-accent-2 hover:border-accent-2/50 transition"
+      >
+        📖 Che cosa stai guardando — <span className="italic">le parole di questa
+        schermata, se vi servono</span>
+      </button>
+    );
+  }
+
   return (
     <div className="rounded-xl border border-accent-2/30 bg-[rgba(26,107,82,.05)] px-5 py-4">
-      <div className="font-mono text-[9.5px] tracking-[.18em] uppercase text-accent-2 mb-3">
-        📖 Che cosa stai guardando
+      <div className="flex items-baseline justify-between gap-3 mb-3">
+        <div className="font-mono text-[9.5px] tracking-[.18em] uppercase text-accent-2">
+          📖 Che cosa stai guardando
+        </div>
+        {esperti && (
+          <button
+            onClick={() => setAperto(false)}
+            className="font-mono text-[9.5px] tracking-[.13em] uppercase text-ink-muted hover:text-accent-2"
+          >
+            richiudi
+          </button>
+        )}
       </div>
       <dl className="space-y-2.5">
         {voci.map((v) => (

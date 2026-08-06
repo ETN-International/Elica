@@ -27,12 +27,19 @@ import { LEGGERE_ALLINEAMENTO } from '../data/guardare';
 import { askTutorProactive } from '../lib/ai';
 import { teamWritingContext } from '../lib/teamContext';
 import { giaVistoNelGiorno0 } from '../lib/progresso';
-import { DomandaCoperta, serveIlGradino } from '../components/GradinoDomanda';
+import {
+  GradinoDomanda,
+  useGradino,
+  TITOLO_DOMANDA_PROPRIA,
+} from '../components/GradinoDomanda';
 
 const ROW = 45; // basi per riga nella visualizzazione allineata
 
 export function Compare({ onNavigate }: { onNavigate: (p: PageId) => void }) {
   const { currentCase, addEntry, dossier } = useStore();
+  // Il gradino di autonomia: lo ospita la prima schermata che la squadra apre,
+  // quindi anche questa. Il hook va chiamato prima di qualunque return anticipato.
+  const gradino = useGradino(currentCase, dossier);
   const [draft, setDraft] = useState('');
   // La risposta del tutor a quello che la squadra scrive nel project work.
   const [reazione, setReazione] = useState<string | null>(null);
@@ -142,18 +149,13 @@ export function Compare({ onNavigate }: { onNavigate: (p: PageId) => void }) {
     (d) => d.kind === 'sostituzione' && d.fromAA && d.toAA && d.fromAA !== d.toAA,
   ).length;
 
-  // Il gradino di autonomia vive nel Modulo 1, ma la domanda deve restare
-  // coperta anche qui: lo Stepper permette di saltare direttamente a questo
-  // modulo, e la vedrebbero in chiaro prima di aver scritto la loro.
-  const coperta = serveIlGradino(currentCase, dossier);
-
   const aiContext = [
     SCREEN_BRIEFINGS.compare,
     teamWritingContext(dossier, currentCase?.id, draft),
     `Caso: ${currentCase.title}`,
     // Coperta anche per il tutor finché la squadra non ha scritto la sua:
     // altrimenti basterebbe chiedergliela in chat.
-    coperta
+    gradino.coperta
       ? "La domanda dell'indagine è ancora coperta: la squadra la sta formulando da sé nel Modulo 1. NON svelarla e non proporne una tua."
       : `Domanda biologica: ${currentCase.question}`,
     `Confronto tra: "${result.aLabel}" e "${result.bLabel}"`,
@@ -187,9 +189,22 @@ export function Compare({ onNavigate }: { onNavigate: (p: PageId) => void }) {
         dek="L'app allinea le due sequenze con un algoritmo vero e le colora: verde dove combaciano, rosso dove differiscono. L'AI interpreta cosa significa."
       />
 
-      {coperta ? (
-        <DomandaCoperta onGo={() => onNavigate('protein')} />
-      ) : (
+      {gradino.attivo && (
+        <GradinoDomanda
+          caso={currentCase}
+          onSalva={(testo) => {
+            addEntry({
+              caseId: currentCase.id,
+              kind: 'domanda',
+              title: TITOLO_DOMANDA_PROPRIA,
+              body: testo,
+            });
+            gradino.svela();
+          }}
+        />
+      )}
+
+      {!gradino.coperta && (
         <FiloDellIndagine
           domanda={currentCase.question}
           passo="Secondo dei tre gesti"

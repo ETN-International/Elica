@@ -7,6 +7,7 @@ import { Compare } from './modules/Compare';
 import { Protein } from './modules/Protein';
 import { DossierView } from './modules/DossierView';
 import { Libera } from './modules/Libera';
+import { Insieme } from './modules/Insieme';
 import { Mutazioni } from './modules/Mutazioni';
 import { Squadra } from './modules/Squadra';
 import { Giorno0 } from './modules/Giorno0';
@@ -29,6 +30,7 @@ export type PageId =
   | 'mutazioni'
   | 'teoria'
   | 'quiz'
+  | 'insieme'
   | 'dossier'
   | 'valutazione';
 
@@ -45,6 +47,7 @@ const VALID: PageId[] = [
   'mutazioni',
   'teoria',
   'quiz',
+  'insieme',
   'dossier',
   'valutazione',
 ];
@@ -119,6 +122,7 @@ export function App() {
           {page === 'compare' && <Compare onNavigate={navigate} />}
           {page === 'protein' && <Protein onNavigate={navigate} />}
           {page === 'libera' && <Libera onNavigate={navigate} />}
+          {page === 'insieme' && <Insieme onNavigate={navigate} />}
           {page === 'mutazioni' && <Mutazioni onNavigate={navigate} />}
           {page === 'teoria' && <Teoria onNavigate={navigate} />}
           {page === 'quiz' && <Quiz onNavigate={navigate} />}

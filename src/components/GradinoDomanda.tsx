@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { Case, Dossier } from '../types';
 import { casiSvolti, TITOLO_DOMANDA_PROPRIA } from '../lib/progresso';
 import { Fase } from './ui';
@@ -38,30 +38,36 @@ export function giaScritta(caso: Case, dossier: Dossier): boolean {
 }
 
 /**
- * La stessa domanda, coperta, negli altri due moduli.
+ * Il gradino vive in QUALUNQUE modulo la squadra apra per primo.
  *
- * Senza questo il gradino aveva una falla larga come una porta: bastava usare
- * lo Stepper per saltare a "Confronta" o a "Leggi il DNA" e la domanda del caso
- * era lì, in chiaro, nel Filo dell'indagine.
+ * Prima stava solo nel Modulo 1 e gli altri due si limitavano a coprire la
+ * domanda rimandando indietro — il che andava in rotta di collisione con il G7,
+ * dove l'indagine parte apposta dalle lettere invece che dalla forma. Ora il
+ * gradino segue la squadra: lo ospita la prima schermata che aprono.
+ *
+ * La decisione si prende all'APERTURA del caso e non cambia più: rivalutarla a
+ * ogni render la farebbe sparire da sotto le mani nell'istante in cui la
+ * squadra salva la propria domanda nel dossier.
  */
-export function DomandaCoperta({ onGo }: { onGo: () => void }) {
-  return (
-    <div className="rounded-xl border border-rule bg-white/40 px-5 py-4 my-5">
-      <div className="font-mono text-[9.5px] tracking-[.18em] uppercase text-accent mb-2">
-        La domanda è ancora coperta
-      </div>
-      <p className="text-[14.5px] text-ink-light">
-        In questa indagine la domanda la scrivete prima voi. È rimasta indietro
-        nel primo modulo: fatela lì, poi tornate qui e le vedrete affiancate.
-      </p>
-      <button
-        onClick={onGo}
-        className="mt-3 rounded-lg bg-ink text-paper px-4 py-2 text-sm font-medium hover:bg-ink-light transition"
-      >
-        Vai a scrivere la vostra domanda <span className="nudge">→</span>
-      </button>
-    </div>
-  );
+export function useGradino(caso: Case | undefined, dossier: Dossier) {
+  const [attivoPer, setAttivoPer] = useState<string | null>(null);
+  const [svelata, setSvelata] = useState(false);
+  const casoId = caso?.id;
+  useEffect(() => {
+    setSvelata(false);
+    setAttivoPer(caso && serveIlGradino(caso, dossier) ? caso.id : null);
+    // Solo su casoId, di proposito: vedi sopra.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [casoId]);
+
+  const attivo = !!caso && attivoPer === caso.id;
+  return {
+    /** Il gradino è in corso in questa indagine. */
+    attivo,
+    /** La domanda del caso va tenuta nascosta (anche al tutor). */
+    coperta: attivo && !svelata,
+    svela: () => setSvelata(true),
+  };
 }
 
 export function GradinoDomanda({

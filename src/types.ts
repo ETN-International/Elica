@@ -99,7 +99,13 @@ export interface DossierEntry {
   createdAt: number;
   /** Caso a cui appartiene la voce (per distinguere le indagini nel dossier cumulativo). */
   caseId?: string;
-  kind: 'domanda' | 'dna' | 'confronto' | 'proteina' | 'conclusione';
+  /**
+   * "insieme" = ciò che nasce dall'incontro con un'altra squadra (lo scambio di
+   * metà percorso, le domande ricevute in revisione, la scoperta appesa alla
+   * parete comune). Ha una sua categoria perché nel dossier finale è la prova
+   * che la squadra ha avuto un pubblico prima della giuria.
+   */
+  kind: 'domanda' | 'dna' | 'confronto' | 'proteina' | 'conclusione' | 'insieme';
   title: string;
   /** Testo/commento della squadra. */
   body: string;

@@ -50,6 +50,12 @@ const visitata =
   ({ progress }) =>
     progress.pagesVisited.includes(page);
 
+/** Una voce nata da un incontro fra squadre (scambio, revisione, parete). */
+const insieme =
+  (prefisso: RegExp): Test =>
+  ({ dossier }) =>
+    dossier.entries.some((e) => e.kind === 'insieme' && prefisso.test(e.title ?? ''));
+
 const esercizio =
   (id: string): Test =>
   ({ progress }) =>
@@ -137,6 +143,7 @@ const PROVE: Record<string, Test> = {
     dossier.entries.some((e) => /mutazione/i.test(e.title ?? '')),
 
   // ── Giorno 6 · indagine completa I ──
+  'd6-m0': almenoCasi(3),
   'd6-m1': almenoCasi(3),
   'd6-m2': ({ dossier }) => {
     // I tre gesti sullo STESSO caso: 3D, confronto e lettura.
@@ -152,7 +159,8 @@ const PROVE: Record<string, Test> = {
   },
   'd6-p1': ({ dossier }) => dossier.entries.length >= 4,
   'd6-p2': voce('conclusione'),
-  'd6-out': ({ dossier }) => dossier.entries.length >= 5,
+  'd6-p3': insieme(/^Scambio/i),
+  'd6-out': insieme(/^Scambio/i),
 
   // ── Giorno 7 · indagine completa II ──
   'd7-m1': almenoCasi(4),
@@ -163,8 +171,9 @@ const PROVE: Record<string, Test> = {
     ({ dossier }) => dossier.entries.some((e) => e.title === TITOLO_DOMANDA_PROPRIA),
     almenoCasi(4),
   ),
-  'd7-p1': voce('conclusione'),
-  'd7-p2': quiz('metodo'),
+  'd7-p1': voce('proteina'),
+  'd7-p2': voce('conclusione'),
+  'd7-p3': quiz('metodo'),
   'd7-out': ({ dossier }) =>
     voce('conclusione')({ dossier } as Prove) && dossier.entries.length >= 6,
 
@@ -174,32 +183,49 @@ const PROVE: Record<string, Test> = {
   'd8-p1': ({ dossier }) =>
     dossier.entries.some((e) => e.kind === 'proteina' && e.caseId?.startsWith('custom_')),
   'd8-p2': ({ dossier }) => dossier.entries.some((e) => e.caseId?.startsWith('custom_')),
+  'd8-p3': insieme(/parete/i),
   'd8-out': ({ dossier }) =>
     dossier.entries.filter((e) => e.caseId?.startsWith('custom_')).length >= 2,
   'd9-m1': ({ dossier }) =>
     dossier.entries.some((e) => e.kind === 'proteina' && e.caseId?.startsWith('custom_')),
   'd9-m2': ({ dossier }) =>
     dossier.entries.some((e) => e.caseId?.startsWith('custom_') && /project work/i.test(e.title ?? '')),
-  'd9-p1': ({ dossier }) =>
-    dossier.entries.filter((e) => e.caseId?.startsWith('custom_')).length >= 3,
+  'd9-p1': insieme(/^Due domande/i),
   'd9-p2': ({ dossier }) =>
-    dossier.entries.some((e) => e.kind === 'conclusione' && e.caseId?.startsWith('custom_')),
+    dossier.entries.filter((e) => e.caseId?.startsWith('custom_')).length >= 3,
+  'd9-p3': visitata('valutazione'),
   'd9-out': ({ dossier }) =>
     dossier.entries.some((e) => e.kind === 'conclusione' && e.caseId?.startsWith('custom_')),
 
   // ── Giorno 10 · giuria ──
   'd10-m1': ({ progress }) => progress.dossierEsportato,
-  'd10-m2': oppure(visitata('valutazione'), quiz('metodo')),
-  'd10-p1': visitata('valutazione'),
-  // d10-p2 (presentazione) e d10-out restano manuali: avvengono in sala.
+  // d10-m2 (presentazione) e d10-out restano manuali: avvengono in sala.
+  'd10-p1': oppure(visitata('valutazione'), quiz('metodo')),
+  'd10-p2': visitata('insieme'),
 };
 
 /** Le attività che l'app non può dimostrare: restano da spuntare a mano. */
-export const SOLO_MANUALI = new Set(['d10-p2', 'd10-out']);
+export const SOLO_MANUALI = new Set(['d10-m2', 'd10-out']);
 
 /** L'app può dimostrare da sola questa attività? */
 export function automatica(id: string): boolean {
   return id in PROVE;
+}
+
+/**
+ * A che giornata è arrivata la squadra, dedotto dalle prove.
+ *
+ * Serve ai ruoli, che ruotano ogni giorno: chiedere «che giorno è?» a una
+ * squadra sarebbe un attrito inutile, e l'host non deve configurare niente. La
+ * giornata corrente è la prima che non risulta ancora finita.
+ */
+export function giornoStimato(ids: string[][], prove: Prove): number {
+  for (let i = 0; i < ids.length; i++) {
+    const automatiche = ids[i].filter((id) => automatica(id));
+    if (automatiche.length === 0) continue;
+    if (!automatiche.every((id) => completata(id, prove))) return i + 1;
+  }
+  return ids.length;
 }
 
 /** L'attività risulta svolta: per prova, oppure spuntata a mano. */
