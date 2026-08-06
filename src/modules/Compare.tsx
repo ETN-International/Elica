@@ -27,6 +27,7 @@ import { LEGGERE_ALLINEAMENTO } from '../data/guardare';
 import { askTutorProactive } from '../lib/ai';
 import { teamWritingContext } from '../lib/teamContext';
 import { giaVistoNelGiorno0 } from '../lib/progresso';
+import { DomandaCoperta, serveIlGradino } from '../components/GradinoDomanda';
 
 const ROW = 45; // basi per riga nella visualizzazione allineata
 
@@ -141,11 +142,20 @@ export function Compare({ onNavigate }: { onNavigate: (p: PageId) => void }) {
     (d) => d.kind === 'sostituzione' && d.fromAA && d.toAA && d.fromAA !== d.toAA,
   ).length;
 
+  // Il gradino di autonomia vive nel Modulo 1, ma la domanda deve restare
+  // coperta anche qui: lo Stepper permette di saltare direttamente a questo
+  // modulo, e la vedrebbero in chiaro prima di aver scritto la loro.
+  const coperta = serveIlGradino(currentCase, dossier);
+
   const aiContext = [
     SCREEN_BRIEFINGS.compare,
     teamWritingContext(dossier, currentCase?.id, draft),
     `Caso: ${currentCase.title}`,
-    `Domanda biologica: ${currentCase.question}`,
+    // Coperta anche per il tutor finché la squadra non ha scritto la sua:
+    // altrimenti basterebbe chiedergliela in chat.
+    coperta
+      ? "La domanda dell'indagine è ancora coperta: la squadra la sta formulando da sé nel Modulo 1. NON svelarla e non proporne una tua."
+      : `Domanda biologica: ${currentCase.question}`,
     `Confronto tra: "${result.aLabel}" e "${result.bLabel}"`,
     `Identità: ${result.identityPct}% (${result.identicalCount}/${result.alignedLength} posizioni identiche)`,
     `Differenze (mismatch): ${result.mismatches}`,
@@ -177,15 +187,19 @@ export function Compare({ onNavigate }: { onNavigate: (p: PageId) => void }) {
         dek="L'app allinea le due sequenze con un algoritmo vero e le colora: verde dove combaciano, rosso dove differiscono. L'AI interpreta cosa significa."
       />
 
-      <FiloDellIndagine
-        domanda={currentCase.question}
-        passo="Secondo dei tre gesti"
-        contributo={
-          giaVistoNelGiorno0(currentCase.id, dossier)
-            ? "La lettera che avete trovato nel Giorno 0 è questa. Allora sapevate solo che cambiava qualcosa: adesso scoprite CHE COSA provoca — quale pezzo della proteina cambia, e perché questo basta a deformare i globuli rossi."
-            : "È qui che si risponde alla domanda: mettiamo i due geni uno sopra l'altro e cerchiamo il punto in cui differiscono. Quel punto è la vostra scoperta."
-        }
-      />
+      {coperta ? (
+        <DomandaCoperta onGo={() => onNavigate('protein')} />
+      ) : (
+        <FiloDellIndagine
+          domanda={currentCase.question}
+          passo="Secondo dei tre gesti"
+          contributo={
+            giaVistoNelGiorno0(currentCase.id, dossier)
+              ? "La lettera che avete trovato nel Giorno 0 è questa. Allora sapevate solo che cambiava qualcosa: adesso scoprite CHE COSA provoca — quale pezzo della proteina cambia, e perché questo basta a deformare i globuli rossi."
+              : "È qui che si risponde alla domanda: mettiamo i due geni uno sopra l'altro e cerchiamo il punto in cui differiscono. Quel punto è la vostra scoperta."
+          }
+        />
+      )}
 
       <Fase
         n={1}

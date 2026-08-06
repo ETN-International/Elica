@@ -37,6 +37,33 @@ export function giaScritta(caso: Case, dossier: Dossier): boolean {
   );
 }
 
+/**
+ * La stessa domanda, coperta, negli altri due moduli.
+ *
+ * Senza questo il gradino aveva una falla larga come una porta: bastava usare
+ * lo Stepper per saltare a "Confronta" o a "Leggi il DNA" e la domanda del caso
+ * era lì, in chiaro, nel Filo dell'indagine.
+ */
+export function DomandaCoperta({ onGo }: { onGo: () => void }) {
+  return (
+    <div className="rounded-xl border border-rule bg-white/40 px-5 py-4 my-5">
+      <div className="font-mono text-[9.5px] tracking-[.18em] uppercase text-accent mb-2">
+        La domanda è ancora coperta
+      </div>
+      <p className="text-[14.5px] text-ink-light">
+        In questa indagine la domanda la scrivete prima voi. È rimasta indietro
+        nel primo modulo: fatela lì, poi tornate qui e le vedrete affiancate.
+      </p>
+      <button
+        onClick={onGo}
+        className="mt-3 rounded-lg bg-ink text-paper px-4 py-2 text-sm font-medium hover:bg-ink-light transition"
+      >
+        Vai a scrivere la vostra domanda <span className="nudge">→</span>
+      </button>
+    </div>
+  );
+}
+
 export function GradinoDomanda({
   caso,
   onSalva,

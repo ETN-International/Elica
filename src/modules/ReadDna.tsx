@@ -29,6 +29,7 @@ import {
   translateCodon,
 } from '../lib/dna';
 import { SCREEN_BRIEFINGS } from '../data/tutorBriefings';
+import { DomandaCoperta, serveIlGradino } from '../components/GradinoDomanda';
 import { LEGGERE_CODONI } from '../data/guardare';
 import { askTutorProactive } from '../lib/ai';
 import { teamWritingContext } from '../lib/teamContext';
@@ -112,11 +113,20 @@ export function ReadDna({ onNavigate }: { onNavigate: (p: PageId) => void }) {
 
   const allGood = quality.every((q) => q.ok);
 
+  // Il gradino di autonomia vive nel Modulo 1, ma la domanda deve restare
+  // coperta anche qui: lo Stepper permette di saltare direttamente a questo
+  // modulo, e la vedrebbero in chiaro prima di aver scritto la loro.
+  const coperta = serveIlGradino(currentCase, dossier);
+
   const aiContext = [
     SCREEN_BRIEFINGS.dna,
     teamWritingContext(dossier, currentCase?.id, draft),
     `Caso: ${currentCase.title}`,
-    `Domanda biologica: ${currentCase.question}`,
+    // Coperta anche per il tutor finché la squadra non ha scritto la sua:
+    // altrimenti basterebbe chiedergliela in chat.
+    coperta
+      ? "La domanda dell'indagine è ancora coperta: la squadra la sta formulando da sé nel Modulo 1. NON svelarla e non proporne una tua."
+      : `Domanda biologica: ${currentCase.question}`,
     `Sequenza scelta: ${seq.label}`,
     `DNA (${dna.length} basi): ${dna}`,
     `Contenuto GC: ${gc}%`,
@@ -142,11 +152,15 @@ export function ReadDna({ onNavigate }: { onNavigate: (p: PageId) => void }) {
         dek="Scegli una sequenza del caso, guardala in modo leggibile e falla spiegare al tutor. Nessun file da capire, nessun upload."
       />
 
-      <FiloDellIndagine
-        domanda={currentCase.question}
-        passo="Terzo dei tre gesti"
-        contributo="Avete visto la forma e trovato la differenza. Resta da leggere che cosa c'è scritto nel gene: è il codice che costruisce quella proteina, lettera per lettera."
-      />
+      {coperta ? (
+        <DomandaCoperta onGo={() => onNavigate('protein')} />
+      ) : (
+        <FiloDellIndagine
+          domanda={currentCase.question}
+          passo="Terzo dei tre gesti"
+          contributo="Avete visto la forma e trovato la differenza. Resta da leggere che cosa c'è scritto nel gene: è il codice che costruisce quella proteina, lettera per lettera."
+        />
+      )}
 
       <div className="flex flex-wrap gap-2 mb-4">
         {currentCase.sequences.map((s, i) => (

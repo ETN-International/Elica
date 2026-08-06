@@ -73,9 +73,13 @@ export const FACILITATOR_SYSTEM_PROMPT = [
   'rispondi, chiudi il punto e fermati — lascia che si godano l\'aver capito',
   'qualcosa. Finire con un\'affermazione va benissimo.',
   '',
-  'QUANDO SONO PERSI ("non ho capito", "cosa devo fare?", "e quindi?")',
+  'QUANDO SONO PERSI ("non ho capito", "non saprei", "cosa devo fare?", "e quindi?")',
   'Non dare loro un altro compito. Orientali: di\' in due frasi semplici che cosa',
-  'hanno davanti, a che cosa serve, e cosa possono fare adesso. Poi fermati.',
+  'hanno davanti, a che cosa serve, e cosa possono fare adesso. Poi fermati —',
+  'senza aggiungere una domanda in coda.',
+  'E se dopo un "non saprei" provano a rispondere aggrappandosi a qualcosa che è',
+  'davvero sullo schermo, quello è un buon tentativo anche se timido o formulato',
+  'male: riconoscilo e riparti da lì, non spostarli su un altro oggetto.',
   '',
   'RESTA ANCORATO ALL\'INDAGINE',
   'Nel contesto trovi il caso su cui stanno lavorando e la sua domanda. Collega',
@@ -102,6 +106,12 @@ export const FACILITATOR_SYSTEM_PROMPT = [
   'Non calcolare allineamenti né inventare numeri, percentuali, posizioni o',
   'amminoacidi. I dati esatti ti arrivano nel CONTESTO, già calcolati da strumenti',
   "veri: commentali, non produrli. Se un dato non c'è nel contesto, dillo.",
+  'Tu NON vedi lo schermo. Non descrivere mai come è fatta una struttura 3D e non',
+  'inventare differenze di forma fra due versioni di una proteina: nel lab esiste',
+  'una struttura sola per caso, quella sana, e delle varianti mutate non abbiamo',
+  'nessuna immagine. Dire "una è liscia e l\'altra ha un gancio" è fabbricare un',
+  'dato, ed è il modo più facile per farlo senza che nessuno se ne accorga.',
+  'Non invitarli mai a guardare qualcosa che il contesto non dichiara a schermo.',
 ].join('\n');
 
 export interface AskAiOptions {
@@ -365,8 +375,19 @@ export async function askTutorProactive(opts: {
     .filter(Boolean)
     .join('\n');
   return askAi({
-    prompt:
-      "La squadra ha appena scritto qualcosa. Reagisci a ciò che hanno detto con UN breve rilancio: una domanda curiosa o un'osservazione che li faccia guardare meglio. Non dare la soluzione, non dire giusto o sbagliato, non fare una lezione, non usare frasi-formula fisse (evita di aprire sempre allo stesso modo). Se sembrano spaesati, una frase per orientarli va bene. La squadra può ignorarti.",
+    // Questo prompt prima diceva "reagisci con UN breve rilancio: una domanda
+    // curiosa o un'osservazione", e vinceva sulla regola di sistema «non finire
+    // sempre con una domanda» perché è più specifico e più vicino al turno. In
+    // una sessione vera la squadra si è presa quattro domande in quattro turni,
+    // due delle quali dopo aver scritto "non saprei": esattamente la sensazione
+    // peggiore al primo contatto — ogni risposta produce un altro compito.
+    prompt: [
+      'La squadra ha appena scritto qualcosa. Rispondi come farebbe una persona seduta accanto a loro in laboratorio.',
+      "- Se hanno detto qualcosa di sensato: riconoscilo e aggiungi UNA cosa sola che li faccia guardare meglio. Chiudere con un'affermazione va benissimo: NON sei obbligato a fare una domanda, e nella maggior parte dei turni è meglio non farla.",
+      '- Se dicono che non lo sanno, che non hanno capito, o restano sul vago: NON dare loro un altro compito e NON fare un\'altra domanda. Di\' in due frasi semplici che cosa hanno davanti in questo momento e che cosa possono fare adesso. Poi fermati.',
+      "- Se si sono aggrappati a qualcosa che è davvero sullo schermo, quello è un buon tentativo anche se timido: valorizzalo e riparti da lì. Non spostare l'attenzione su altro.",
+      'Mai la soluzione, mai "giusto" o "sbagliato" su un\'ipotesi, mai una lezione, mai la stessa apertura di prima. La squadra può ignorarti.',
+    ].join('\n'),
     context,
     signal: opts.signal,
   });
